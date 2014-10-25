@@ -1,0 +1,10 @@
+gametypes
+   Shootout
+      old west redux
+   Artillary
+      launch grenades that detonate after fuse runs out.
+      fuse lasts longer the longer you hold down fire.
+      range: from very close to you, up to enemy paddle.
+
+"high stakes" scoring: points scored is a factor of ball speed
+
