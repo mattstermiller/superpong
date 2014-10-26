@@ -2,8 +2,7 @@ import pygame
 from pygame.locals import *
 from pygame.sprite import Sprite
 import assets
-
-table = None
+import controllers
 
 
 class Table(Sprite):
@@ -23,15 +22,16 @@ class Table(Sprite):
 
 
 class Paddle(Sprite):
-    def __init__(self, side):
+    def __init__(self, table, side):
         Sprite.__init__(self)
+        self.table = table
 
         if side == 0:
-            color = (192, 32, 32)
+            texcolor = (192, 32, 32)
         else:
-            color = (32, 32, 240)
+            texcolor = (32, 32, 240)
 
-        self.image = assets.load_image('paddle.png', colorize=color)
+        self.image = assets.load_image('paddle.png', colorize=texcolor)
         self.rect = self.image.get_rect()
 
         hoffset = 50
@@ -45,7 +45,7 @@ class Paddle(Sprite):
 
     def update(self):
         self.rect.move_ip(0, 10 * self.direction)
-        self.rect.clamp_ip(table.innerRect)
+        self.rect.clamp_ip(self.table.innerRect)
 
     def up(self):
         self.direction = -1
@@ -77,27 +77,24 @@ def main():
 
     clock = pygame.time.Clock()
 
-    global table
     table = Table()
-    paddle0 = Paddle(0)
-    paddle1 = Paddle(1)
+    paddle0 = Paddle(table, 0)
+    paddle1 = Paddle(table, 1)
     sprites = pygame.sprite.RenderPlain(paddle0, paddle1, table)
+
+    player = controllers.PlayerController(paddle0)
+    bot = controllers.AIController(paddle1)
 
     while 1:
         clock.tick(60)
 
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 return
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                return
-            elif event.type == KEYDOWN and event.key == K_UP:
-                paddle0.up()
-            elif event.type == KEYDOWN and event.key == K_DOWN:
-                paddle0.down()
-            elif event.type == KEYUP and (event.key == K_UP or event.key == K_DOWN):
-                paddle0.stop()
+            elif player.handle_event(event):
+                pass
 
+        bot.update()
         sprites.update()
 
         screen.blit(background, (0, 0))
