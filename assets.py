@@ -11,11 +11,12 @@ if not pygame.mixer:
     print('Warning, sound disabled!')
 
 
-def load_image(name, color_key=None):
+def load_image(name, color_key=None, colorize=None):
     """
     Load an image file.
     :param name: Name of the image file to load (in assets.images_folder).
     :param color_key: Transparent color (use -1 to use the first pixel)
+    :param colorize: Color to copy to all pixels (alpha remains intact)
     :return: Surface instance
     :raise SystemExit: When the image cannot be loaded
     """
@@ -35,6 +36,12 @@ def load_image(name, color_key=None):
         if color_key is -1:
             color_key = image.get_at((0, 0))
         image.set_colorkey(color_key, RLEACCEL)
+
+    if colorize is not None:
+        arr = pygame.surfarray.pixels3d(image)
+        arr[:, :, 0] = colorize[0]
+        arr[:, :, 1] = colorize[1]
+        arr[:, :, 2] = colorize[2]
 
     return image
 

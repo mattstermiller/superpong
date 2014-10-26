@@ -1,7 +1,21 @@
+classes
+    Table
+        support for ball, paddle collision
+    Ball
+    Controller
+        AI
+        load bindings
+    Configuration
+    Menu
+        tree nodes
+
+scaling screen size
+
+
 gametypes
    Shootout
       old west redux
-   Artillary
+   Artillery
       launch grenades that detonate after fuse runs out.
       fuse lasts longer the longer you hold down fire.
       range: from very close to you, up to enemy paddle.
