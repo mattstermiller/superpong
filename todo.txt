@@ -1,14 +1,11 @@
 classes
-    Table
-        support for ball, paddle collision
-    Ball
     Controller
-        AI
         load bindings
     Configuration
     Menu
-        tree nodes
+        as tree nodes
 
+ball collision
 scaling screen size
 
 

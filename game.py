@@ -102,8 +102,10 @@ def main():
     paddle1 = Paddle(table, 1)
     sprites = pygame.sprite.RenderPlain(table, ball, paddle0, paddle1)
 
-    player0 = controllers.PlayerController(paddle0, K_UP, K_DOWN)
-    player1 = controllers.AIController(paddle1)
+    players = [controllers.PlayerController(paddle0, K_UP, K_DOWN)]
+    bots = [controllers.AIController(paddle1)]
+    # players = [controllers.PlayerController(paddle0, K_w, K_s), controllers.PlayerController(paddle1, K_UP, K_DOWN)]
+    # bots = []
 
     while 1:
         clock.tick(60)
@@ -111,10 +113,14 @@ def main():
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 return
-            elif player0.handle_event(event):
-                pass
 
-        player1.update()
+            for player in players:
+                if player.handle_event(event):
+                    break
+
+        for bot in bots:
+            bot.update()
+
         sprites.update()
 
         screen.blit(background, (0, 0))

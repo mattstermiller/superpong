@@ -6,16 +6,26 @@ class PlayerController():
         self.paddle = paddle
         self.upKey = upKey
         self.downKey = downKey
+        self.upPressed = False
+        self.downPressed = False
 
     def handle_event(self, event):
-        if event.type == KEYDOWN and event.key == self.upKey:
-            self.paddle.up()
-        elif event.type == KEYDOWN and event.key == self.downKey:
-            self.paddle.down()
-        elif event.type == KEYUP and (event.key in (self.upKey, self.downKey)):
-            self.paddle.stop()
+        if not event.type in [KEYDOWN, KEYUP]:
+            return False
+
+        if event.key == self.upKey:
+            self.upPressed = event.type == KEYDOWN
+        elif event.key == self.downKey:
+            self.downPressed = event.type == KEYDOWN
         else:
             return False
+
+        if self.upPressed and not self.downPressed:
+            self.paddle.up()
+        elif self.downPressed and not self.upPressed:
+            self.paddle.down()
+        else:
+            self.paddle.stop()
         return True
 
 
