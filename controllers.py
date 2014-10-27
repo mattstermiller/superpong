@@ -2,17 +2,17 @@ from pygame.constants import *
 
 
 class PlayerController():
-    def __init__(self, paddle):
+    def __init__(self, paddle, upKey, downKey):
         self.paddle = paddle
-        self.upkey = K_UP
-        self.downkey = K_DOWN
+        self.upKey = upKey
+        self.downKey = downKey
 
     def handle_event(self, event):
-        if event.type == KEYDOWN and event.key == self.upkey:
+        if event.type == KEYDOWN and event.key == self.upKey:
             self.paddle.up()
-        elif event.type == KEYDOWN and event.key == self.downkey:
+        elif event.type == KEYDOWN and event.key == self.downKey:
             self.paddle.down()
-        elif event.type == KEYUP and (event.key in (self.upkey, self.downkey)):
+        elif event.type == KEYUP and (event.key in (self.upKey, self.downKey)):
             self.paddle.stop()
         else:
             return False

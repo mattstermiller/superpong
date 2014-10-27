@@ -10,6 +10,7 @@ class Table(Sprite):
         Sprite.__init__(self)
 
         wallsize = 20
+        wallcolor = color.THECOLORS['white']
 
         self.rect = Rect(0, 100, 800, 400)
         self.innerRect = self.rect.inflate(-wallsize*2, -wallsize*2)
@@ -17,8 +18,8 @@ class Table(Sprite):
         self.image = pygame.Surface(self.rect.size)
         self.image = self.image.convert_alpha()
         self.image.fill((0, 0, 0, 0))
-        self.image.fill((255, 255, 255), Rect(0, 0, self.rect.width, wallsize))
-        self.image.fill((255, 255, 255), Rect(0, self.rect.height - wallsize, self.rect.width, wallsize))
+        self.image.fill(wallcolor, Rect(0, 0, self.rect.width, wallsize))
+        self.image.fill(wallcolor, Rect(0, self.rect.height - wallsize, self.rect.width, wallsize))
 
 
 class Paddle(Sprite):
@@ -57,6 +58,24 @@ class Paddle(Sprite):
         self.direction = 0
 
 
+class Ball(Sprite):
+    def __init__(self, table):
+        Sprite.__init__(self)
+        self.table = table
+
+        self.rect = Rect(0, 0, 10, 10)
+        self.image = pygame.Surface(self.rect.size)
+        self.image.fill(color.THECOLORS['white'])
+
+        self.vel = (50.0, 20.0)
+        self.pos = self.rect.center = table.innerRect.center
+
+    def update(self):
+        delta = 1/60
+        self.pos = tuple(p + v*delta for p, v in zip(self.pos, self.vel))
+        self.rect.center = tuple(round(x) for x in self.pos)
+
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
@@ -64,11 +83,11 @@ def main():
     pygame.mouse.set_visible(0)
 
     background = pygame.Surface(screen.get_size()).convert()
-    background.fill((0, 0, 0))
+    background.fill(color.THECOLORS['black'])
 
     if pygame.font:
         font = pygame.font.Font(None, 36)
-        text = font.render("Super Pong 2015", 1, (255, 255, 255))
+        text = font.render("Super Pong 2015", 1, color.THECOLORS['white'])
         textpos = text.get_rect(center=(background.get_width() / 2, 50))
         background.blit(text, textpos)
 
@@ -78,12 +97,13 @@ def main():
     clock = pygame.time.Clock()
 
     table = Table()
+    ball = Ball(table)
     paddle0 = Paddle(table, 0)
     paddle1 = Paddle(table, 1)
-    sprites = pygame.sprite.RenderPlain(paddle0, paddle1, table)
+    sprites = pygame.sprite.RenderPlain(table, ball, paddle0, paddle1)
 
-    player = controllers.PlayerController(paddle0)
-    bot = controllers.AIController(paddle1)
+    player0 = controllers.PlayerController(paddle0, K_UP, K_DOWN)
+    player1 = controllers.AIController(paddle1)
 
     while 1:
         clock.tick(60)
@@ -91,10 +111,10 @@ def main():
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 return
-            elif player.handle_event(event):
+            elif player0.handle_event(event):
                 pass
 
-        bot.update()
+        player1.update()
         sprites.update()
 
         screen.blit(background, (0, 0))
