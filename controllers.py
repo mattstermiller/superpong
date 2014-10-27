@@ -29,9 +29,17 @@ class PlayerController():
         return True
 
 
-class AIController:
-    def __init__(self, paddle):
+class BotController:
+    def __init__(self, paddle, ball):
         self.paddle = paddle
+        self.ball = ball
 
     def update(self):
-        pass
+        threshhold = 10
+        diff = self.ball.rect.centery - self.paddle.rect.centery
+        if diff > threshhold:
+            self.paddle.down()
+        elif diff < -threshhold:
+            self.paddle.up()
+        else:
+            self.paddle.stop()

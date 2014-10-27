@@ -45,7 +45,8 @@ class Paddle(Sprite):
         self.direction = 0
 
     def update(self):
-        self.rect.move_ip(0, 10 * self.direction)
+        speed = 5
+        self.rect.move_ip(0, speed * self.direction)
         self.rect.clamp_ip(self.table.innerRect)
 
     def up(self):
@@ -102,8 +103,8 @@ def main():
     paddle1 = Paddle(table, 1)
     sprites = pygame.sprite.RenderPlain(table, ball, paddle0, paddle1)
 
-    players = [controllers.PlayerController(paddle0, K_UP, K_DOWN)]
-    bots = [controllers.AIController(paddle1)]
+    players = [controllers.PlayerController(paddle0, K_w, K_s)]
+    bots = [controllers.BotController(paddle1, ball)]
     # players = [controllers.PlayerController(paddle0, K_w, K_s), controllers.PlayerController(paddle1, K_UP, K_DOWN)]
     # bots = []
 
