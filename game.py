@@ -28,9 +28,9 @@ class Paddle(Sprite):
         self.table = table
 
         if side == 0:
-            texcolor = (192, 32, 32)
-        else:
             texcolor = (32, 32, 240)
+        else:
+            texcolor = (192, 32, 32)
 
         self.image = assets.load_image('paddle.png', colorize=texcolor)
         self.rect = self.image.get_rect()

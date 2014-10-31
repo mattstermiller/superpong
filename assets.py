@@ -10,6 +10,8 @@ if not pygame.font:
 if not pygame.mixer:
     print('Warning, sound disabled!')
 
+_imageCache = {}
+
 
 def load_image(name, color_key=None, colorize=None):
     """
@@ -21,23 +23,30 @@ def load_image(name, color_key=None, colorize=None):
     :raise SystemExit: When the image cannot be loaded
     """
     path = os.path.join(image_folder, name)
-    try:
-        image = pygame.image.load(path)
-    except pygame.error as message:
-        print('Cannot load image: ', path)
-        raise SystemExit(message)
 
-    if name.endswith('.png'):
-        image = image.convert_alpha()
+    if path not in _imageCache:
+        try:
+            image = pygame.image.load(path)
+        except pygame.error as message:
+            print('Cannot load image: ', path)
+            raise SystemExit(message)
+
+        if name.endswith('.png'):
+            image = image.convert_alpha()
+        else:
+            image = image.convert()
+
+        if color_key is not None:
+            if color_key is -1:
+                color_key = image.get_at((0, 0))
+            image.set_colorkey(color_key, RLEACCEL)
+
+        _imageCache[path] = image
     else:
-        image = image.convert()
-
-    if color_key is not None:
-        if color_key is -1:
-            color_key = image.get_at((0, 0))
-        image.set_colorkey(color_key, RLEACCEL)
+        image = _imageCache[path]
 
     if colorize is not None:
+        image = image.copy()
         arr = pygame.surfarray.pixels3d(image)
         arr[:, :, 0] = colorize[0]
         arr[:, :, 1] = colorize[1]
