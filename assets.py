@@ -47,10 +47,17 @@ def load_image(name, color_key=None, colorize=None):
 
     if colorize is not None:
         image = image.copy()
-        arr = pygame.surfarray.pixels3d(image)
-        arr[:, :, 0] = colorize[0]
-        arr[:, :, 1] = colorize[1]
-        arr[:, :, 2] = colorize[2]
+
+        try:
+            arr = pygame.surfarray.pixels3d(image)
+            arr[:, :, 0] = colorize[0]
+            arr[:, :, 1] = colorize[1]
+            arr[:, :, 2] = colorize[2]
+        except:
+            pxarray = pygame.PixelArray(image)
+            for y in range(pxarray.shape[1]):
+                pxarray[:, y] = list(colorize + (image.unmap_rgb(px)[3],) for px in pxarray[:, y])
+            del pxarray
 
     return image
 
