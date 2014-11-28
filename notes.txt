@@ -9,6 +9,19 @@ ball collision
 scaling screen size
 
 
+95 behavior
+    dimensions
+        table outer 640,440
+        table inner 606,396
+        paddle 10,64
+            face 48
+        ball 9,9
+        bullet 16,3
+        explosion 48,48
+    paddle collision behaves as if paddles were lens-shaped
+    ball speeds up every 10 hits
+
+
 gametypes
    Shootout
       old west redux
