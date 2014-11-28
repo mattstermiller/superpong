@@ -1,6 +1,8 @@
 import pygame
 from pygame.locals import *
 from pygame.sprite import Sprite
+from pygame.math import Vector2
+from pygame import draw
 import assets
 import controllers
 
@@ -64,16 +66,25 @@ class Ball(Sprite):
         Sprite.__init__(self)
         self.table = table
 
-        self.rect = Rect(0, 0, 10, 10)
+        self.radius = 6
+        self.rect = Rect(0, 0, self.radius*2, self.radius*2)
         self.image = pygame.Surface(self.rect.size)
-        self.image.fill(color.THECOLORS['white'])
+        draw.circle(self.image, color.THECOLORS['white'], (self.radius, self.radius), self.radius)
 
-        self.vel = (50.0, 20.0)
-        self.pos = self.rect.center = table.innerRect.center
+        self.vel = Vector2(50.0, 80.0)
+        self.pos = self.rect.center = Vector2(table.innerRect.center)
 
     def update(self):
         delta = 1/60
-        self.pos = tuple(p + v*delta for p, v in zip(self.pos, self.vel))
+        moveTo = self.pos + self.vel*delta
+        if moveTo.y <= self.table.innerRect.top + self.radius:
+            moveTo.y = self.table.innerRect.top + self.radius
+            self.vel.y *= -1
+        elif moveTo.y >= self.table.innerRect.bottom - self.radius:
+            moveTo.y = self.table.innerRect.bottom - self.radius
+            self.vel.y *= -1
+
+        self.pos = moveTo
         self.rect.center = tuple(round(x) for x in self.pos)
 
 
