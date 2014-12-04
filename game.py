@@ -76,7 +76,19 @@ class Ball(Sprite):
 
     def update(self):
         delta = 1/60
-        moveTo = self.pos + self.vel*delta
+        move = self.vel*delta
+
+        # move in small increments so that the ball cannot pass through objects when travelling quickly
+        while move:
+            incr = Vector2(move)
+            if incr.length_squared() > self.radius**2:
+                incr.scale_to_length(self.radius)
+                move.scale_to_length(move.length() - self.radius)
+            else:
+                move = None
+            self._move(self.pos + incr)
+
+    def _move(self, moveTo):
         if moveTo.y <= self.table.innerRect.top + self.radius:
             moveTo.y = self.table.innerRect.top + self.radius
             self.vel.y *= -1
