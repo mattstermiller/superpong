@@ -17,8 +17,7 @@ class Table(Sprite):
         self.rect = rect
         self.innerRect = self.rect.inflate(-wallsize*2, -wallsize*2)
 
-        self.image = pygame.Surface(self.rect.size)
-        self.image = self.image.convert_alpha()
+        self.image = pygame.Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
         self.image.fill(wallcolor, Rect(0, 0, self.rect.width, wallsize))
         self.image.fill(wallcolor, Rect(0, self.rect.height - wallsize, self.rect.width, wallsize))
@@ -68,7 +67,8 @@ class Ball(Sprite):
 
         self.radius = 6
         self.rect = Rect(0, 0, self.radius*2, self.radius*2)
-        self.image = pygame.Surface(self.rect.size)
+        self.image = pygame.Surface(self.rect.size).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
         draw.circle(self.image, color.THECOLORS['white'], (self.radius, self.radius), self.radius)
 
         self.vel = Vector2(50.0, 80.0)
