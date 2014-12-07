@@ -18,7 +18,7 @@ scaling screen size
         ball 9,9
         bullet 16,3
         explosion 48,48
-    paddle collision behaves as if paddles were lens-shaped
+    paddle collision behaves as if paddles were elliptical
     ball speeds up every 10 hits
 
 

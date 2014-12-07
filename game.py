@@ -8,13 +8,13 @@ import controllers
 
 
 class Table(Sprite):
-    def __init__(self):
+    def __init__(self, rect):
         Sprite.__init__(self)
 
         wallsize = 20
         wallcolor = color.THECOLORS['white']
 
-        self.rect = Rect(0, 100, 800, 400)
+        self.rect = rect
         self.innerRect = self.rect.inflate(-wallsize*2, -wallsize*2)
 
         self.image = pygame.Surface(self.rect.size)
@@ -102,25 +102,38 @@ class Ball(Sprite):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))
+
+    screenSize = (800, 600)
+    screenAspect = screenSize[0] / screenSize[1]
+    screen = pygame.display.set_mode(screenSize)
+
     pygame.display.set_caption('Super Pong 2015')
     pygame.mouse.set_visible(0)
+
+    # calculate usable area
+    tableAspect = 1.5
+    if screenAspect > tableAspect:
+        # constrained by vertical space
+        tableRect = Rect(0, 0, screenSize[1] * tableAspect, screenSize[1])
+    else:
+        tableRect = Rect(0, 0, screenSize[0], screenSize[0] / tableAspect)
+    tableRect.center = Rect((0, 0), screenSize).center
 
     background = pygame.Surface(screen.get_size()).convert()
     background.fill(color.THECOLORS['black'])
 
-    if pygame.font:
-        font = pygame.font.Font(None, 36)
-        text = font.render("Super Pong 2015", 1, color.THECOLORS['white'])
-        textpos = text.get_rect(center=(background.get_width() / 2, 50))
-        background.blit(text, textpos)
+    # if pygame.font:
+        # font = pygame.font.Font(None, 36)
+        # text = font.render("Super Pong 2015", 1, color.THECOLORS['white'])
+        # textpos = text.get_rect(center=(background.get_width() / 2, 50))
+        # background.blit(text, textpos)
 
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
     clock = pygame.time.Clock()
 
-    table = Table()
+    table = Table(tableRect)
     ball = Ball(table)
     paddle0 = Paddle(table, 0)
     paddle1 = Paddle(table, 1)
