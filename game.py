@@ -47,6 +47,7 @@ class Table(Sprite):
 
         wallSize = 0.045
         wallColor = color.THECOLORS['white']
+        centerLineColor = color.THECOLORS['red']
 
         self.size = Vector2(1.5, 1)
         self.innerSize = self.size.elementwise() - wallSize*2
@@ -57,9 +58,18 @@ class Table(Sprite):
         pixelWallSize = viewport.translateSize((wallSize, wallSize))
         self.image = pygame.Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
+
+        # draw center line
+        lineDivisions = 15
+        lineRect = Rect((0, 0), viewport.translateSize((0.005, 1/lineDivisions)))
+        lineRect.centerx = self.rect.width/2
+        for i in range(1, lineDivisions, 2):
+            lineRect.y = lineRect.height*i
+            self.image.fill(centerLineColor, lineRect)
+
+        # draw walls
         self.image.fill(wallColor, Rect(0, 0, self.rect.width, pixelWallSize.y))
         self.image.fill(wallColor, Rect(0, self.rect.height - pixelWallSize.y, self.rect.width, pixelWallSize.y))
-
 
 class Paddle(Sprite):
     def __init__(self, table, side):
@@ -84,7 +94,7 @@ class Paddle(Sprite):
         draw.ellipse(self.image, paddleColor, Rect((0, 0), endSize))
         draw.ellipse(self.image, paddleColor, Rect((0, self.rect.height-self.rect.width), endSize))
         middle = Rect(0, self.rect.width/2, self.rect.width, self.rect.height - self.rect.width)
-        draw.rect(self.image, paddleColor, middle)
+        self.image.fill(paddleColor, middle)
 
     def update(self):
         delta = 1/60
