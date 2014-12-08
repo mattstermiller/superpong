@@ -71,6 +71,7 @@ class Table(Sprite):
         self.image.fill(wallColor, Rect(0, 0, self.rect.width, pixelWallSize.y))
         self.image.fill(wallColor, Rect(0, self.rect.height - pixelWallSize.y, self.rect.width, pixelWallSize.y))
 
+
 class Paddle(Sprite):
     def __init__(self, table, side):
         Sprite.__init__(self)

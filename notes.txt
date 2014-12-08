@@ -2,13 +2,12 @@ classes
     Controller
         load bindings
     Configuration
+    GameState
     Menu
         as tree nodes
 
 ball collision
     treat wall pieces as sprites
-draw paddles as rectangles with round ends
-draw table centerline
 measure actual delta time
 
 
