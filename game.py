@@ -3,24 +3,62 @@ from pygame.locals import *
 from pygame.sprite import Sprite
 from pygame.math import Vector2
 from pygame import draw
-import assets
 import controllers
 
 
+class Viewport:
+    def __init__(self, screenArea, cameraSize, cameraCenter=(0, 0), invertYAxis = True):
+        screenSize = Vector2(screenArea.size)
+        screenPos = Vector2(screenArea.topleft)
+        cameraSize = Vector2(cameraSize)
+        cameraCenter = Vector2(cameraCenter)
+
+        self.sizeFactor = screenSize.elementwise()/cameraSize
+        self.posFactor = Vector2(self.sizeFactor)
+        self.posTranslate = cameraSize/2 - cameraCenter
+        screenTranslate = (screenPos.elementwise()*cameraSize).elementwise()/screenSize
+        if invertYAxis:
+            self.posFactor.y *= -1
+            screenTranslate.y *= -1
+            self.posTranslate.y -= cameraSize.y
+        self.posTranslate += screenTranslate
+
+    def translateSize(self, size):
+        pixelSize = Vector2(size).elementwise()*self.sizeFactor
+        return Vector2(tuple(round(z) for z in pixelSize))
+
+    def translatePos(self, pos):
+        pixelPos = (Vector2(pos) + self.posTranslate).elementwise() * self.posFactor
+        return Vector2(tuple(round(z) for z in pixelPos))
+
+    def updateRect(self, sprite):
+        if not hasattr(sprite, 'rect'):
+            sprite.rect = Rect(0, 0, 1, 1)
+        sprite.rect.size = self.translateSize(sprite.size)
+        self.updateRectPos(sprite)
+
+    def updateRectPos(self, sprite):
+        sprite.rect.center = self.translatePos(sprite.pos)
+
+
 class Table(Sprite):
-    def __init__(self, rect):
+    def __init__(self):
         Sprite.__init__(self)
 
-        wallsize = 20
-        wallcolor = color.THECOLORS['white']
+        wallSize = 0.045
+        wallColor = color.THECOLORS['white']
 
-        self.rect = rect
-        self.innerRect = self.rect.inflate(-wallsize*2, -wallsize*2)
+        self.size = Vector2(1.5, 1)
+        self.innerSize = self.size.elementwise() - wallSize*2
+        self.pos = Vector2()
 
+        viewport.updateRect(self)
+
+        pixelWallSize = viewport.translateSize((wallSize, wallSize))
         self.image = pygame.Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
-        self.image.fill(wallcolor, Rect(0, 0, self.rect.width, wallsize))
-        self.image.fill(wallcolor, Rect(0, self.rect.height - wallsize, self.rect.width, wallsize))
+        self.image.fill(wallColor, Rect(0, 0, self.rect.width, pixelWallSize.y))
+        self.image.fill(wallColor, Rect(0, self.rect.height - pixelWallSize.y, self.rect.width, pixelWallSize.y))
 
 
 class Paddle(Sprite):
@@ -28,33 +66,40 @@ class Paddle(Sprite):
         Sprite.__init__(self)
         self.table = table
 
-        if side == 0:
-            texcolor = (32, 32, 240)
-        else:
-            texcolor = (192, 32, 32)
-
-        self.image = assets.load_image('paddle.png', colorize=texcolor)
-        self.rect = self.image.get_rect()
-
-        hoffset = 50
-        if side == 0:
-            self.rect.centerx = table.innerRect.left + hoffset
-        else:
-            self.rect.centerx = table.innerRect.right - hoffset
-        self.rect.centery = table.innerRect.centery
-
+        self.size = Vector2(0.024, 0.145)
+        self.pos = Vector2(-0.6, 0)
         self.direction = 0
 
+        if side == 0:
+            paddleColor = (32, 32, 240)
+        else:
+            paddleColor = (192, 32, 32)
+            self.pos.x *= -1
+
+        viewport.updateRect(self)
+
+        self.image = pygame.Surface(self.rect.size).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
+        draw.ellipse(self.image, paddleColor, Rect((0, 0), self.rect.size))
+
     def update(self):
-        speed = 5
-        self.rect.move_ip(0, speed * self.direction)
-        self.rect.clamp_ip(self.table.innerRect)
+        delta = 1/60
+        speed = 0.6*delta
+        self.pos.y += speed*self.direction
+
+        maxDist = self.table.innerSize.y/2 - self.size.y/2
+        if self.pos.y > maxDist:
+            self.pos.y = maxDist
+        elif self.pos.y < -maxDist:
+            self.pos.y = -maxDist
+
+        viewport.updateRectPos(self)
 
     def up(self):
-        self.direction = -1
+        self.direction = 1
 
     def down(self):
-        self.direction = 1
+        self.direction = -1
 
     def stop(self):
         self.direction = 0
@@ -65,14 +110,17 @@ class Ball(Sprite):
         Sprite.__init__(self)
         self.table = table
 
-        self.radius = 6
-        self.rect = Rect(0, 0, self.radius*2, self.radius*2)
+        self.radius = 0.021
+        self.size = Vector2(self.radius, self.radius)
+        self.pos = Vector2()
+
+        self.vel = Vector2(0.1, 0.5)
+
+        viewport.updateRect(self)
+
         self.image = pygame.Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
-        draw.circle(self.image, color.THECOLORS['white'], (self.radius, self.radius), self.radius)
-
-        self.vel = Vector2(50.0, 80.0)
-        self.pos = self.rect.center = Vector2(table.innerRect.center)
+        draw.ellipse(self.image, color.THECOLORS['white'], Rect((0, 0), self.rect.size))
 
     def update(self):
         delta = 1/60
@@ -86,38 +134,28 @@ class Ball(Sprite):
                 move.scale_to_length(move.length() - self.radius)
             else:
                 move = None
-            self._move(self.pos + incr)
+            self.pos += incr
+            self._collide()
 
-    def _move(self, moveTo):
-        if moveTo.y <= self.table.innerRect.top + self.radius:
-            moveTo.y = self.table.innerRect.top + self.radius
-            self.vel.y *= -1
-        elif moveTo.y >= self.table.innerRect.bottom - self.radius:
-            moveTo.y = self.table.innerRect.bottom - self.radius
-            self.vel.y *= -1
+        viewport.updateRectPos(self)
 
-        self.pos = moveTo
-        self.rect.center = tuple(round(x) for x in self.pos)
+    def _collide(self):
+        maxDist = self.table.innerSize.y/2 - self.radius
+        if self.pos.y >= maxDist:
+            self.pos.y = maxDist
+            self.vel.y *= -1
+        elif self.pos.y <= -maxDist:
+            self.pos.y = -maxDist
+            self.vel.y *= -1
 
 
 def main():
     pygame.init()
 
-    screenSize = (800, 600)
-    screenAspect = screenSize[0] / screenSize[1]
-    screen = pygame.display.set_mode(screenSize)
+    screen = pygame.display.set_mode((800, 600))
 
     pygame.display.set_caption('Super Pong 2015')
     pygame.mouse.set_visible(0)
-
-    # calculate usable area
-    tableAspect = 1.5
-    if screenAspect > tableAspect:
-        # constrained by vertical space
-        tableRect = Rect(0, 0, screenSize[1] * tableAspect, screenSize[1])
-    else:
-        tableRect = Rect(0, 0, screenSize[0], screenSize[0] / tableAspect)
-    tableRect.center = Rect((0, 0), screenSize).center
 
     background = pygame.Surface(screen.get_size()).convert()
     background.fill(color.THECOLORS['black'])
@@ -133,7 +171,12 @@ def main():
 
     clock = pygame.time.Clock()
 
-    table = Table(tableRect)
+    gameArea = Vector2(1.5, 1)
+    screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
+    global viewport
+    viewport = Viewport(screenArea, gameArea)
+
+    table = Table()
     ball = Ball(table)
     paddle0 = Paddle(table, 0)
     paddle1 = Paddle(table, 1)

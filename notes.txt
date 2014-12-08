@@ -6,15 +6,19 @@ classes
         as tree nodes
 
 ball collision
-scaling screen size
+    treat wall pieces as sprites
+draw paddles as rectangles with round ends
+draw table centerline
+measure actual delta time
 
 
 95 behavior
     dimensions
         table outer 640,440
-        table inner 606,396
+        table inner 600,400
         paddle 10,64
             face 48
+            distance from paddle center to table center 250
         ball 9,9
         bullet 16,3
         explosion 48,48
@@ -31,3 +35,12 @@ gametypes
       range: from very close to you, up to enemy paddle.
 
 "high stakes" scoring: points scored is based on ball speed
+
+
+polish
+    animate from menu into game
+        fade out menu
+        open walls on either side
+        move ball into position
+        expand paddles vertically out of thin air
+        fade in the middle line
