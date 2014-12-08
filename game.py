@@ -97,6 +97,9 @@ class Paddle(Sprite):
         middle = Rect(0, self.rect.width/2, self.rect.width, self.rect.height - self.rect.width)
         self.image.fill(paddleColor, middle)
 
+        if side == 0:
+            self.image = pygame.transform.flip(self.image, True, False)
+
     def update(self):
         delta = 1/60
         speed = 0.6*delta
