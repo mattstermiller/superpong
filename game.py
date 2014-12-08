@@ -80,7 +80,11 @@ class Paddle(Sprite):
 
         self.image = pygame.Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
-        draw.ellipse(self.image, paddleColor, Rect((0, 0), self.rect.size))
+        endSize = (self.rect.width, self.rect.width)
+        draw.ellipse(self.image, paddleColor, Rect((0, 0), endSize))
+        draw.ellipse(self.image, paddleColor, Rect((0, self.rect.height-self.rect.width), endSize))
+        middle = Rect(0, self.rect.width/2, self.rect.width, self.rect.height - self.rect.width)
+        draw.rect(self.image, paddleColor, middle)
 
     def update(self):
         delta = 1/60
