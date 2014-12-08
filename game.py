@@ -110,11 +110,11 @@ class Ball(Sprite):
         Sprite.__init__(self)
         self.table = table
 
-        self.radius = 0.021
-        self.size = Vector2(self.radius, self.radius)
+        self.radius = 0.01
+        self.size = Vector2(self.radius*2, self.radius*2)
         self.pos = Vector2()
 
-        self.vel = Vector2(0.1, 0.5)
+        self.vel = Vector2(0.1, 0.3)
 
         viewport.updateRect(self)
 
