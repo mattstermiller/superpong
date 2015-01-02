@@ -1,12 +1,10 @@
-import pygame
-from pygame.locals import *
-from pygame.math import Vector2
-from pong import PongSprite, Table, Paddle, Ball
+from pong import *
 from controllers import PlayerController, BotController
 
 
 class Viewport:
-    def __init__(self, screenArea, cameraSize, cameraCenter=(0, 0), invertYAxis = True):
+    def __init__(self, screenArea: Rect, cameraSize: (float, float), cameraCenter: (float, float)=(0, 0),
+            invertYAxis: bool=True):
         screenSize = Vector2(screenArea.size)
         screenPos = Vector2(screenArea.topleft)
         cameraSize = Vector2(cameraSize)
@@ -22,21 +20,21 @@ class Viewport:
             self.posTranslate.y -= cameraSize.y
         self.posTranslate += screenTranslate
 
-    def translateSize(self, size):
+    def translateSize(self, size: (float, float)):
         pixelSize = Vector2(size).elementwise()*self.sizeFactor
         return Vector2(tuple(round(z) for z in pixelSize))
 
-    def translatePos(self, pos):
+    def translatePos(self, pos: (float, float)):
         pixelPos = (Vector2(pos) + self.posTranslate).elementwise() * self.posFactor
         return Vector2(tuple(round(z) for z in pixelPos))
 
-    def updateRect(self, sprite):
+    def updateRect(self, sprite: PongSprite):
         if not hasattr(sprite, 'rect'):
             sprite.rect = Rect(0, 0, 1, 1)
         sprite.rect.size = self.translateSize(sprite.size)
         self.updateRectPos(sprite)
 
-    def updateRectPos(self, sprite):
+    def updateRectPos(self, sprite: PongSprite):
         sprite.rect.center = self.translatePos(sprite.pos)
 
 

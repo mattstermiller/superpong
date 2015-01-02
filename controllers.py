@@ -1,15 +1,17 @@
 from pygame.constants import *
+from pygame.event import EventType
+from pong import Paddle, Ball
 
 
 class PlayerController():
-    def __init__(self, paddle, upKey, downKey):
+    def __init__(self, paddle: Paddle, upKey: int, downKey: int):
         self.paddle = paddle
         self.upKey = upKey
         self.downKey = downKey
         self.upPressed = False
         self.downPressed = False
 
-    def handle_event(self, event):
+    def handle_event(self, event: EventType):
         if event.type not in [KEYDOWN, KEYUP]:
             return False
 
@@ -30,7 +32,7 @@ class PlayerController():
 
 
 class BotController:
-    def __init__(self, paddle, ball):
+    def __init__(self, paddle: Paddle, ball: Ball):
         self.paddle = paddle
         self.ball = ball
 

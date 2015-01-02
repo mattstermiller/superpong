@@ -11,6 +11,10 @@ class PongSprite(Sprite):
 
     def __init__(self):
         Sprite.__init__(self)
+        self.rect = Rect()
+        self.size = Rect()
+        self.pos = Vector2()
+        self.vel = Vector2()
 
 
 class Table(PongSprite):
@@ -23,7 +27,6 @@ class Table(PongSprite):
 
         self.size = Vector2(1.5, 1)
         self.innerSize = self.size.elementwise() - wallSize*2
-        self.pos = Vector2()
 
         self.viewport.updateRect(self)
 
@@ -45,7 +48,7 @@ class Table(PongSprite):
 
 
 class Paddle(PongSprite):
-    def __init__(self, table, side):
+    def __init__(self, table: Table, side: int):
         PongSprite.__init__(self)
         self.table = table
 
@@ -96,7 +99,7 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
-    def __init__(self, table):
+    def __init__(self, table: Table):
         PongSprite.__init__(self)
         self.table = table
 
