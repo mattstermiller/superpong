@@ -11,8 +11,8 @@ class PongSprite(Sprite):
 
     def __init__(self):
         Sprite.__init__(self)
-        self.rect = Rect()
-        self.size = Rect()
+        self.rect = Rect(0, 0, 0, 0)
+        self.size = Rect(0, 0, 0, 0)
         self.pos = Vector2()
         self.vel = Vector2()
 

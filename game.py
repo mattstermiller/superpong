@@ -1,3 +1,4 @@
+from menu import *
 from pong import *
 from controllers import PlayerController, BotController
 
@@ -30,7 +31,7 @@ class Viewport:
 
     def updateRect(self, sprite: PongSprite):
         if not hasattr(sprite, 'rect'):
-            sprite.rect = Rect(0, 0, 1, 1)
+            sprite.rect = Rect(0, 0, 0, 0)
         sprite.rect.size = self.translateSize(sprite.size)
         self.updateRectPos(sprite)
 
@@ -39,6 +40,7 @@ class Viewport:
 
 
 def main():
+    # display
     pygame.init()
 
     screen = pygame.display.set_mode((800, 600))
@@ -49,21 +51,17 @@ def main():
     background = pygame.Surface(screen.get_size()).convert()
     background.fill(color.THECOLORS['black'])
 
-    # if pygame.font:
-        # font = pygame.font.Font(None, 36)
-        # text = font.render("Super Pong 2015", 1, color.THECOLORS['white'])
-        # textpos = text.get_rect(center=(background.get_width() / 2, 50))
-        # background.blit(text, textpos)
-
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
     clock = pygame.time.Clock()
 
+    # viewport
     gameArea = Vector2(1.5, 1)
     screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
     PongSprite.viewport = Viewport(screenArea, gameArea)
 
+    # game sprites
     table = Table()
     ball = Ball(table)
     paddle0 = Paddle(table, 0)
@@ -72,27 +70,54 @@ def main():
 
     players = [PlayerController(paddle0, K_w, K_s)]
     bots = [BotController(paddle1, ball)]
-    # players = [PlayerController(paddle0, K_w, K_s), PlayerController(paddle1, K_UP, K_DOWN)]
-    # bots = []
 
-    while True:
+    # menu
+    isRunning = True
+    inMenu = True
+
+    menu = Menu(screen.get_rect(), pygame.font.Font(None, 36), color.THECOLORS['white'])
+
+    def menuContinue():
+        nonlocal inMenu
+        inMenu = False
+    menu.add(MenuNode("Continue", menuContinue, K_c))
+
+    def menuExit():
+        nonlocal isRunning
+        isRunning = False
+    menu.add(MenuNode("Exit", menuExit, K_e))
+
+    # game loop
+    while isRunning:
         clock.tick(60)
 
         for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                return
+            if event.type == QUIT:
+                isRunning = False
 
-            for player in players:
-                if player.handle_event(event):
-                    break
+            if inMenu:
+                menu.handle_event(event)
+            else:
+                if event.type == KEYDOWN and event.key == K_ESCAPE:
+                    inMenu = True
+                    continue
 
-        for bot in bots:
-            bot.update()
+                for player in players:
+                    if player.handle_event(event):
+                        break
 
-        sprites.update()
+        if not inMenu:
+            for bot in bots:
+                bot.update()
+
+            sprites.update()
 
         screen.blit(background, (0, 0))
         sprites.draw(screen)
+
+        if inMenu:
+            menu.draw(screen)
+
         pygame.display.flip()
 
 

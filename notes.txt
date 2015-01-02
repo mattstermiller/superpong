@@ -4,7 +4,8 @@ classes
     Configuration
     GameState
     Menu
-        as tree nodes
+        CheckMenuNode
+        RadioMenuNode
 
 ball collision
     treat wall pieces as sprites
