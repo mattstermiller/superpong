@@ -42,6 +42,15 @@ class MenuNode:
         if self.menu is not None:
             node.init(self.menu)
 
+    def getSize(self) -> (int, int):
+        if len(self.nodes) > 0:
+            width = max([self.rect.width] + list(n.rect.width for n in self.nodes)) + self.menu.itemHeight*2
+            # include room for border top and bottom, menu header, and header padding
+            height = (len(self.nodes) + 3)*self.menu.itemHeight
+            return (width, height)
+        else:
+            return (0, 0)
+
     def handle_event(self, event: EventType) -> bool:
         if event.key == K_UP:
             if self.selected > 0:
@@ -78,10 +87,10 @@ class MenuNode:
     def drawMenu(self, screen: Surface):
         pos = list(self.menu.midtop)
 
-        def advance(positions: int=1):
-            pos[1] += (self.menu.fontHeight + self.menu.fontPadding)*positions
+        def advance(positions: float=1):
+            pos[1] += int(self.menu.itemHeight*positions)
 
-        advance()
+        advance(0.5)
         self.draw(screen, pos)
         advance(2)
 
@@ -105,6 +114,7 @@ class Menu:
         self.fontColor = fontColor
         self.fontHeight = font.get_height()
         self.fontPadding = int(self.fontHeight/4)
+        self.itemHeight = self.fontHeight + self.fontPadding
         self.selectColor = selectColor
         self.backgroundColor = backgroundColor
         self.borderColor = borderColor
@@ -131,24 +141,19 @@ class Menu:
         self.imageInited = True
 
         if self.backgroundColor:
-            # search for largest node count in tree
-            def visit(n: MenuNode) -> int:
-                sizes = [len(n.nodes)]
-                for c in n.nodes:
-                    sizes.append(visit(c))
-                return max(sizes)
+            # search for largest dimensions in tree
+            def maxSize(n: MenuNode) -> (int, int):
+                sizes = [n.getSize()] + list(maxSize(c) for c in n.nodes)
+                return tuple(max(s[d] for s in sizes) for d in range(2))
 
             node = self.current
             while node.parent:
                 node = node.parent
 
-            maxItems = visit(node)
-
-            # include room for border top and bottom, menu header, and header padding
-            size = (400, (self.fontHeight + self.fontPadding) * (maxItems + 4))
+            size = maxSize(node)
 
             import drawutil
-            self.image = drawutil.rect(size, self.backgroundColor, int(self.fontHeight / 2), self.borderColor)
+            self.image = drawutil.rect(size, self.backgroundColor, int(self.fontPadding), self.borderColor)
             self.imageRect = Rect((0, 0), size)
             self.imageRect.midtop = self.midtop
 

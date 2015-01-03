@@ -30,8 +30,6 @@ class Viewport:
         return Vector2(tuple(round(z) for z in pixelPos))
 
     def updateRect(self, sprite: PongSprite):
-        if not hasattr(sprite, 'rect'):
-            sprite.rect = Rect(0, 0, 0, 0)
         sprite.rect.size = self.translateSize(sprite.size)
         self.updateRectPos(sprite)
 
@@ -52,13 +50,11 @@ def setupMenu(state: GameState, screenSize: (int, int)) -> Menu:
 
     def resume():
         state.inMenu = False
+    root.add(MenuNode("Resume", resume, K_c))
 
-    root.add(MenuNode("Continue", resume, K_c))
-
-    def menuExit():
+    def exit():
         state.isRunning = False
-
-    root.add(MenuNode("Exit", menuExit, K_e))
+    root.add(MenuNode("Exit", exit, K_e))
 
     return menu
 
