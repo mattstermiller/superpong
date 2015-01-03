@@ -45,8 +45,9 @@ class GameState:
 
 def setupMenu(state: GameState, screenSize: (int, int)) -> Menu:
     root = MenuNode("Super Pong 2015")
-    menu = Menu(root, (int(screenSize[0]/2), 100), pygame.font.Font(None, 36), color.THECOLORS['white'],
-                (0, 0, 128), (64, 64, 64, 192), (255, 255, 255, 192), (128, 128, 128, 32))
+    menu = Menu(root, pygame.font.Font(None, 36), color.THECOLORS['white'], (0, 0, 128), (64, 64, 64, 192),
+                (255, 255, 255, 192), (128, 128, 128, 32))
+    menu.midtop = (int(screenSize[0]/2), int(screenSize[0]/8))
 
     def resume():
         state.inMenu = False

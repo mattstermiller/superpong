@@ -79,37 +79,32 @@ class MenuNode:
         elif self.callback:
             self.callback()
 
-    def draw(self, screen: Surface, pos: (int, int)):
-        drawRect = self.rect.copy()
-        drawRect.midtop = pos
-        screen.blit(self.image, drawRect)
-
     def drawMenu(self, screen: Surface):
-        pos = list(self.menu.midtop)
+        pos = list(self.menu.topleft)
+        pos[0] += self.menu.itemHeight
 
         def advance(positions: float=1):
             pos[1] += int(self.menu.itemHeight*positions)
 
         advance(0.5)
-        self.draw(screen, pos)
+        screen.blit(self.image, pos)
         advance(2)
 
         for i, node in enumerate(self.nodes):
             if i == self.selected:
                 selectedRect = node.rect.copy()
-                selectedRect.midtop = pos
+                selectedRect.topleft = pos
                 selectedRect.inflate_ip(self.menu.fontPadding*2, self.menu.fontPadding)
-                screen.fill((self.menu.selectColor), selectedRect)
-            node.draw(screen, pos)
+                screen.fill(self.menu.selectColor, selectedRect)
+            screen.blit(node.image, pos)
             advance()
 
 
 class Menu:
-    def __init__(self, node: MenuNode, midtop: (int, int), font: Font, fontColor: Color, selectColor: Color,
+    def __init__(self, node: MenuNode, font: Font, fontColor: Color, selectColor: Color,
                  backgroundColor: Color=None, borderColor: Color=None, fadeColor: Color=None):
         self.current = node
 
-        self.midtop = midtop
         self.font = font
         self.fontColor = fontColor
         self.fontHeight = font.get_height()
@@ -119,9 +114,35 @@ class Menu:
         self.backgroundColor = backgroundColor
         self.borderColor = borderColor
         self.fadeColor = fadeColor
+
+        self._topleft = (0, 0)
+        self._midtop = None
+        """:type: (int, int)"""
         self.imageInited = False
 
         node.init(self)
+
+    @property
+    def topleft(self) -> (int, int):
+        return self._topleft
+
+    @topleft.setter
+    def topleft(self, value):
+        self._topleft = value
+        if self.imageInited:
+            self._midtop = (value[0] + int(self.image.get_size()[0]/2), value[1])
+        else:
+            self._midtop = None
+
+    @property
+    def midtop(self) -> (int, int):
+        return self._midtop
+
+    @midtop.setter
+    def midtop(self, value):
+        self._midtop = value
+        if self.imageInited:
+            self._topleft = (value[0] - int(self.image.get_size()[0]/2), value[1])
 
     def handle_event(self, event: EventType) -> bool:
         if event.type != KEYDOWN:
@@ -134,7 +155,8 @@ class Menu:
             self._initImage(screen)
 
         if self.image:
-            screen.blit(self.image, self.imageRect)
+            drawPos = (0, 0) if self.fadeColor else self.topleft
+            screen.blit(self.image, drawPos)
         self.current.drawMenu(screen)
 
     def _initImage(self, screen: Surface):
@@ -153,9 +175,10 @@ class Menu:
             size = maxSize(node)
 
             import drawutil
-            self.image = drawutil.rect(size, self.backgroundColor, int(self.fontPadding), self.borderColor)
-            self.imageRect = Rect((0, 0), size)
-            self.imageRect.midtop = self.midtop
+            self.image = drawutil.rect(size, self.backgroundColor, self.fontPadding, self.borderColor)
+            # if midtop was set, re-set it to calculate topleft
+            if self.midtop:
+                self.midtop = self.midtop
 
         if self.fadeColor:
             fade = Surface(screen.get_size())
@@ -167,6 +190,5 @@ class Menu:
 
             fade.fill(self.fadeColor)
 
-            fade.blit(self.image, self.imageRect)
+            fade.blit(self.image, self.topleft)
             self.image = fade
-            self.imageRect = self.image.get_rect()
