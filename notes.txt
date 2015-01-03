@@ -1,9 +1,6 @@
 classes
     Controller
         load bindings
-    Configuration
-    GameState
-    Menu
 
 ball collision
     treat wall pieces as sprites
