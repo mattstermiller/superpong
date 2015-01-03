@@ -104,8 +104,8 @@ class MenuNode:
 
 
 class CheckMenuNode(MenuNode):
-    def __init__(self, text: str, callback=None, key: int=None):
-        MenuNode.__init__(self, text, callback, key)
+    def __init__(self, text: str, key: int=None):
+        MenuNode.__init__(self, text, None, key)
         self.checked = False
 
     def init(self, menu: Menu):
@@ -130,6 +130,17 @@ class CheckMenuNode(MenuNode):
         MenuNode.draw(self, screen, pos)
         if self.checked:
             screen.fill(self.menu.selectColor, self.checkRect.move(pos))
+
+
+class RadioMenuNode(CheckMenuNode):
+    def __init__(self, text: str, key: int=None):
+        CheckMenuNode.__init__(self, text, key)
+
+    def invoke(self):
+        CheckMenuNode.invoke(self)
+        for node in self.parent.nodes:
+            if node is not self:
+                node.checked = False
 
 
 class Menu:
