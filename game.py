@@ -5,7 +5,7 @@ from controllers import PlayerController, BotController
 
 class Viewport:
     def __init__(self, screenArea: Rect, cameraSize: (float, float), cameraCenter: (float, float)=(0, 0),
-            invertYAxis: bool=True):
+                 invertYAxis: bool=True):
         screenSize = Vector2(screenArea.size)
         screenPos = Vector2(screenArea.topleft)
         cameraSize = Vector2(cameraSize)
@@ -37,6 +37,30 @@ class Viewport:
 
     def updateRectPos(self, sprite: PongSprite):
         sprite.rect.center = self.translatePos(sprite.pos)
+
+
+class GameState:
+    def __init__(self):
+        self.isRunning = True
+        self.inMenu = True
+
+
+def setupMenu(state: GameState, screenSize: (int, int)) -> Menu:
+    root = MenuNode("Super Pong 2015")
+    menu = Menu(root, (int(screenSize[0]/2), 100), pygame.font.Font(None, 36), color.THECOLORS['white'],
+                (0, 0, 128), (64, 64, 64, 192), (255, 255, 255, 192), (128, 128, 128, 32))
+
+    def resume():
+        state.inMenu = False
+
+    root.add(MenuNode("Continue", resume, K_c))
+
+    def menuExit():
+        state.isRunning = False
+
+    root.add(MenuNode("Exit", menuExit, K_e))
+
+    return menu
 
 
 def main():
@@ -72,41 +96,29 @@ def main():
     bots = [BotController(paddle1, ball)]
 
     # menu
-    isRunning = True
-    inMenu = True
-
-    menu = Menu(screen.get_rect(), pygame.font.Font(None, 36), color.THECOLORS['white'])
-
-    def menuContinue():
-        nonlocal inMenu
-        inMenu = False
-    menu.add(MenuNode("Continue", menuContinue, K_c))
-
-    def menuExit():
-        nonlocal isRunning
-        isRunning = False
-    menu.add(MenuNode("Exit", menuExit, K_e))
+    state = GameState()
+    menu = setupMenu(state, screen.get_size())
 
     # game loop
-    while isRunning:
+    while state.isRunning:
         clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == QUIT:
-                isRunning = False
+                state.isRunning = False
 
-            if inMenu:
+            if state.inMenu:
                 menu.handle_event(event)
             else:
                 if event.type == KEYDOWN and event.key == K_ESCAPE:
-                    inMenu = True
+                    state.inMenu = True
                     continue
 
                 for player in players:
                     if player.handle_event(event):
                         break
 
-        if not inMenu:
+        if not state.inMenu:
             for bot in bots:
                 bot.update()
 
@@ -115,7 +127,7 @@ def main():
         screen.blit(background, (0, 0))
         sprites.draw(screen)
 
-        if inMenu:
+        if state.inMenu:
             menu.draw(screen)
 
         pygame.display.flip()
