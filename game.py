@@ -21,11 +21,11 @@ class Viewport:
             self.posTranslate.y -= cameraSize.y
         self.posTranslate += screenTranslate
 
-    def translateSize(self, size: (float, float)):
+    def translateSize(self, size: (float, float)) -> Vector2:
         pixelSize = Vector2(size).elementwise()*self.sizeFactor
         return Vector2(tuple(round(z) for z in pixelSize))
 
-    def translatePos(self, pos: (float, float)):
+    def translatePos(self, pos: (float, float)) -> Vector2:
         pixelPos = (Vector2(pos) + self.posTranslate).elementwise() * self.posFactor
         return Vector2(tuple(round(z) for z in pixelPos))
 

@@ -11,7 +11,7 @@ class PlayerController():
         self.upPressed = False
         self.downPressed = False
 
-    def handle_event(self, event: EventType):
+    def handle_event(self, event: EventType) -> bool:
         if event.type not in [KEYDOWN, KEYUP]:
             return False
 
