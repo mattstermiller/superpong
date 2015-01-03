@@ -43,19 +43,31 @@ class GameState:
         self.inMenu = True
 
 
-def setupMenu(state: GameState, screenSize: (int, int)) -> Menu:
+def getMainMenu(state: GameState, screenSize: (int, int)) -> Menu:
     root = MenuNode("Super Pong 2015")
-    menu = Menu(root, pygame.font.Font(None, 36), color.THECOLORS['white'], (0, 0, 128), (64, 64, 64, 192),
-                (255, 255, 255, 192), (128, 128, 128, 32))
-    menu.midtop = (int(screenSize[0]/2), int(screenSize[0]/8))
 
     def resume():
         state.inMenu = False
-    root.add(MenuNode("Resume", resume, K_c))
+    root.add(MenuNode("Resume", resume, K_r))
+
+    options = MenuNode("Options", key=K_o)
+    options.add(MenuNode("Video", key=K_v))
+    options.add(MenuNode("Audio", key=K_a))
+    options.add(MenuNode("Key Bindings", key=K_k))
+    root.add(options)
 
     def exit():
         state.isRunning = False
     root.add(MenuNode("Exit", exit, K_e))
+
+    fontColor = THECOLORS['white']
+    selectColor = (0, 0, 128)
+    backgroundColor = (64, 64, 64, 192)
+    borderColor = (255, 255, 255, 192)
+    fadeColor = (128, 128, 128, 32)
+
+    menu = Menu(root, pygame.font.Font(None, 36), fontColor, selectColor, backgroundColor, borderColor, fadeColor)
+    menu.midtop = (int(screenSize[0]/2), int(screenSize[0]/8))
 
     return menu
 
@@ -70,7 +82,7 @@ def main():
     pygame.mouse.set_visible(False)
 
     background = pygame.Surface(screen.get_size()).convert()
-    background.fill(color.THECOLORS['black'])
+    background.fill(THECOLORS['black'])
 
     screen.blit(background, (0, 0))
     pygame.display.flip()
@@ -94,7 +106,7 @@ def main():
 
     # menu
     state = GameState()
-    menu = setupMenu(state, screen.get_size())
+    menu = getMainMenu(state, screen.get_size())
 
     # game loop
     while state.isRunning:

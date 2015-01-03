@@ -3,6 +3,7 @@ from pygame.locals import *
 from pygame.sprite import Sprite
 from pygame import Surface
 from pygame import draw
+from pygame.color import THECOLORS
 from pygame.math import Vector2
 
 
@@ -22,8 +23,8 @@ class Table(PongSprite):
         PongSprite.__init__(self)
 
         wallSize = 0.045
-        wallColor = color.THECOLORS['white']
-        centerLineColor = color.THECOLORS['red']
+        wallColor = THECOLORS['white']
+        centerLineColor = THECOLORS['red']
 
         self.size = Vector2(1.5, 1)
         self.innerSize = self.size.elementwise() - wallSize*2
@@ -113,7 +114,7 @@ class Ball(PongSprite):
 
         self.image = Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
-        draw.ellipse(self.image, color.THECOLORS['white'], Rect((0, 0), self.rect.size))
+        draw.ellipse(self.image, THECOLORS['white'], Rect((0, 0), self.rect.size))
 
     def update(self):
         delta = 1/60
