@@ -31,7 +31,7 @@ class MenuNode:
 
     def init(self, menu):
         self.menu = menu
-        self.image = menu.font.render(self.text, 1, menu.fontColor)
+        self.image = menu.font.render(self.text, 1, menu.foreColor)
         self.rect = self.image.get_rect()
         for node in self.nodes:
             node.init(menu)
@@ -79,6 +79,9 @@ class MenuNode:
         elif self.callback:
             self.callback()
 
+    def draw(self, screen: Surface, pos: (int, int)):
+        screen.blit(self.image, pos)
+
     def drawMenu(self, screen: Surface):
         pos = list(self.menu.topleft)
         pos[0] += self.menu.itemHeight
@@ -96,17 +99,46 @@ class MenuNode:
                 selectedRect.topleft = pos
                 selectedRect.inflate_ip(self.menu.fontPadding*2, self.menu.fontPadding)
                 screen.fill(self.menu.selectColor, selectedRect)
-            screen.blit(node.image, pos)
+            node.draw(screen, pos)
             advance()
 
 
+class CheckMenuNode(MenuNode):
+    def __init__(self, text: str, callback=None, key: int=None):
+        MenuNode.__init__(self, text, callback, key)
+        self.checked = False
+
+    def init(self, menu: Menu):
+        MenuNode.init(self, menu)
+
+        self.rect.width += self.menu.fontHeight - self.menu.fontPadding
+        image = Surface(self.rect.size).convert_alpha()
+        image.fill([0]*4)
+        image.blit(self.image, (self.menu.fontHeight - self.menu.fontPadding, 0))
+        self.image = image
+
+        box = Rect((0, 0), [self.menu.fontHeight]*2)
+        box.inflate_ip([-self.menu.fontPadding*2]*2)
+        box.x = 0
+        image.fill(self.menu.foreColor, box)
+        self.checkRect = box.inflate([-self.menu.fontPadding]*2)
+
+    def invoke(self):
+        self.checked = not self.checked
+
+    def draw(self, screen: Surface, pos: (int, int)):
+        MenuNode.draw(self, screen, pos)
+        if self.checked:
+            screen.fill(self.menu.selectColor, self.checkRect.move(pos))
+
+
 class Menu:
-    def __init__(self, node: MenuNode, font: Font, fontColor: Color, selectColor: Color,
+    def __init__(self, node: MenuNode, font: Font, foreColor: Color, selectColor: Color,
                  backgroundColor: Color=None, borderColor: Color=None, fadeColor: Color=None):
         self.current = node
 
         self.font = font
-        self.fontColor = fontColor
+        self.foreColor = foreColor
         self.fontHeight = font.get_height()
         self.fontPadding = int(self.fontHeight/4)
         self.itemHeight = self.fontHeight + self.fontPadding

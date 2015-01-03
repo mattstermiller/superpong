@@ -51,7 +51,13 @@ def getMainMenu(state: GameState, screenSize: (int, int)) -> Menu:
     root.add(MenuNode("Resume", resume, K_r))
 
     options = MenuNode("Options", key=K_o)
-    options.add(MenuNode("Video", key=K_v))
+
+    video = MenuNode("Video", key=K_v)
+    video.add(MenuNode("Full Screen", key=K_f))
+    video.add(MenuNode("Resolution", key=K_r))
+    video.add(CheckMenuNode("Glow Effect", key=K_g))
+    options.add(video)
+
     options.add(MenuNode("Audio", key=K_a))
     options.add(MenuNode("Key Bindings", key=K_k))
     root.add(options)
@@ -60,13 +66,13 @@ def getMainMenu(state: GameState, screenSize: (int, int)) -> Menu:
         state.isRunning = False
     root.add(MenuNode("Exit", exit, K_e))
 
-    fontColor = THECOLORS['white']
+    foreColor = THECOLORS['white']
     selectColor = (0, 0, 128)
     backgroundColor = (64, 64, 64, 192)
     borderColor = (255, 255, 255, 192)
     fadeColor = (128, 128, 128, 32)
 
-    menu = Menu(root, pygame.font.Font(None, 36), fontColor, selectColor, backgroundColor, borderColor, fadeColor)
+    menu = Menu(root, pygame.font.Font(None, 36), foreColor, selectColor, backgroundColor, borderColor, fadeColor)
     menu.midtop = (int(screenSize[0]/2), int(screenSize[0]/8))
 
     return menu
@@ -113,7 +119,7 @@ def main():
         clock.tick(60)
 
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or event.type == KEYDOWN and event.mod & KMOD_ALT and event.key == K_F4:
                 state.isRunning = False
 
             if state.inMenu:
