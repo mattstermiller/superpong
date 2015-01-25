@@ -50,6 +50,48 @@ class StateManager:
         self.current = GameState.mainMenu
 
 
+class Game:
+    def __init__(self, state: StateManager):
+        self.state = state
+
+        table = Table()
+        self.ball = Ball(table)
+        self.paddles = [Paddle(table, -1), Paddle(table, 1)]
+        self.sprites = pygame.sprite.RenderPlain(table, self.ball, self.paddles[0], self.paddles[1])
+
+        self.players = []
+        self.bots = []
+
+    def start(self, players: int):
+        for sprite in [self.ball] + self.paddles:
+            sprite.reset()
+
+        self.players = [PlayerController(self.paddles[0], K_w, K_s)]
+        self.bots = []
+
+        if players == 1:
+            self.bots.append(BotController(self.paddles[1], self.ball))
+        elif players == 2:
+            self.players.append(PlayerController(self.paddles[1], K_UP, K_DOWN))
+
+    def handle_event(self, event: EventType) -> bool:
+        if event.type == KEYDOWN and event.key == K_ESCAPE:
+            self.state.current = GameState.pauseMenu
+            return True
+
+        for player in self.players:
+            if player.handle_event(event):
+                return True
+
+        return False
+
+    def update(self):
+        for bot in self.bots:
+            bot.update()
+
+        self.sprites.update()
+
+
 def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:
     foreColor = THECOLORS['white']
     selectColor = (0, 0, 128)
@@ -77,17 +119,19 @@ def getOptions() -> MenuNode:
     return options
 
 
-def getMainMenu(state: StateManager, screenSize: (int, int)) -> Menu:
+def getMainMenu(state: StateManager, game: Game, screenSize: (int, int)) -> Menu:
     root = MenuNode("Super Pong 2015")
 
     newGame = MenuNode("New Game", key=K_n)
 
     def play1():
+        game.start(1)
         state.current = GameState.inGame
         root.menu.reset()
     newGame.add(MenuNode("Single Player", play1, K_s))
 
     def play2():
+        game.start(2)
         state.current = GameState.inGame
         root.menu.reset()
     newGame.add(MenuNode("Two Players", play2, K_t))
@@ -146,19 +190,9 @@ def main():
     screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
     PongSprite.viewport = Viewport(screenArea, gameArea)
 
-    # game sprites
-    table = Table()
-    ball = Ball(table)
-    paddle0 = Paddle(table, 0)
-    paddle1 = Paddle(table, 1)
-    sprites = pygame.sprite.RenderPlain(table, ball, paddle0, paddle1)
-
-    players = [PlayerController(paddle0, K_w, K_s)]
-    bots = [BotController(paddle1, ball)]
-
-    # menu
     state = StateManager()
-    mainMenu = getMainMenu(state, screen.get_size())
+    game = Game(state)
+    mainMenu = getMainMenu(state, game, screen.get_size())
     pauseMenu = getPauseMenu(state, screen.get_size())
 
     # game loop
@@ -175,13 +209,7 @@ def main():
             elif state.current == GameState.pauseMenu:
                 pauseMenu.handle_event(event)
             elif state.current == GameState.inGame:
-                if event.type == KEYDOWN and event.key == K_ESCAPE:
-                    state.current = GameState.pauseMenu
-                    continue
-
-                for player in players:
-                    if player.handle_event(event):
-                        break
+                game.handle_event(event)
 
         if state.current == GameState.quit:
             screen.fill(THECOLORS['black'])
@@ -189,13 +217,10 @@ def main():
             break
 
         if state.current == GameState.inGame:
-            for bot in bots:
-                bot.update()
-
-            sprites.update()
+            game.update()
 
         screen.blit(background, (0, 0))
-        sprites.draw(screen)
+        game.sprites.draw(screen)
 
         if state.current == GameState.mainMenu:
             mainMenu.draw(screen)

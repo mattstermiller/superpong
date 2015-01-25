@@ -52,16 +52,17 @@ class Paddle(PongSprite):
     def __init__(self, table: Table, side: int):
         PongSprite.__init__(self)
         self.table = table
+        self.side = side
 
         self.size = Vector2(0.024, 0.145)
-        self.pos = Vector2(-0.6, 0)
+        self.pos = Vector2()
         self.direction = 0
+        self.reset()
 
-        if side == 0:
+        if self.side < 0:
             paddleColor = (32, 32, 240)
         else:
             paddleColor = (192, 32, 32)
-            self.pos.x *= -1
 
         self.viewport.updateRect(self)
 
@@ -73,8 +74,12 @@ class Paddle(PongSprite):
         middle = Rect(0, self.rect.width/2, self.rect.width, self.rect.height - self.rect.width)
         self.image.fill(paddleColor, middle)
 
-        if side == 0:
+        if self.side < 0:
             self.image = pygame.transform.flip(self.image, True, False)
+
+    def reset(self):
+        self.pos = Vector2(0.6 * self.side, 0)
+        self.stop()
 
     def update(self):
         delta = 1/60
@@ -107,14 +112,18 @@ class Ball(PongSprite):
         self.radius = 0.01
         self.size = Vector2(self.radius*2, self.radius*2)
         self.pos = Vector2()
-
-        self.vel = Vector2(0.1, 0.3)
+        self.vel = Vector2()
+        self.reset()
 
         self.viewport.updateRect(self)
 
         self.image = Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
         draw.ellipse(self.image, THECOLORS['white'], Rect((0, 0), self.rect.size))
+
+    def reset(self):
+        self.pos = Vector2()
+        self.vel = Vector2(0.1, 0.3)
 
     def update(self):
         delta = 1/60
