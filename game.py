@@ -1,6 +1,7 @@
 from menu import *
 from pong import *
 from controllers import PlayerController, BotController
+from enum import Enum
 
 
 class Viewport:
@@ -37,45 +38,90 @@ class Viewport:
         sprite.rect.center = self.translatePos(sprite.pos)
 
 
-class GameState:
+class GameState(Enum):
+    mainMenu = 1
+    pauseMenu = 2
+    inGame = 3
+    quit = 4
+
+
+class StateManager:
     def __init__(self):
-        self.isRunning = True
-        self.inMenu = True
+        self.current = GameState.mainMenu
 
 
-def getMainMenu(state: GameState, screenSize: (int, int)) -> Menu:
-    root = MenuNode("Super Pong 2015")
-
-    def resume():
-        state.inMenu = False
-    root.add(MenuNode("Resume", resume, K_r))
-
-    options = MenuNode("Options", key=K_o)
-
-    video = MenuNode("Video", key=K_v)
-    video.add(MenuNode("Full Screen", key=K_f))
-    video.add(MenuNode("Resolution", key=K_r))
-    video.add(CheckMenuNode("Glow Effect", key=K_g))
-    options.add(video)
-
-    options.add(MenuNode("Audio", key=K_a))
-    options.add(MenuNode("Key Bindings", key=K_k))
-    root.add(options)
-
-    def exit():
-        state.isRunning = False
-    root.add(MenuNode("Exit", exit, K_e))
-
+def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:
     foreColor = THECOLORS['white']
     selectColor = (0, 0, 128)
     backgroundColor = (64, 64, 64, 192)
     borderColor = (255, 255, 255, 192)
     fadeColor = (128, 128, 128, 32)
 
-    menu = Menu(root, pygame.font.Font(None, 36), foreColor, selectColor, backgroundColor, borderColor, fadeColor)
-    menu.midtop = (int(screenSize[0]/2), int(screenSize[0]/8))
+    menu = Menu(rootNode, pygame.font.Font(None, 36), foreColor, selectColor, backgroundColor, borderColor, fadeColor)
+    menu.midtop = (int(screenSize[0] / 2), int(screenSize[0] / 8))
 
     return menu
+
+
+def getOptions() -> MenuNode:
+    options = MenuNode("Options", key=K_o)
+
+    video = MenuNode("Video", key=K_v)
+    video.add(CheckMenuNode("Full Screen", key=K_f))
+    video.add(MenuNode("Resolution", key=K_r))
+
+    options.add(video)
+    options.add(MenuNode("Audio", key=K_a))
+    options.add(MenuNode("Key Bindings", key=K_k))
+
+    return options
+
+
+def getMainMenu(state: StateManager, screenSize: (int, int)) -> Menu:
+    root = MenuNode("Super Pong 2015")
+
+    newGame = MenuNode("New Game", key=K_n)
+
+    def play1():
+        state.current = GameState.inGame
+        root.menu.reset()
+    newGame.add(MenuNode("Single Player", play1, K_s))
+
+    def play2():
+        state.current = GameState.inGame
+        root.menu.reset()
+    newGame.add(MenuNode("Two Players", play2, K_t))
+
+    root.add(newGame)
+
+    root.add(getOptions())
+
+    def exitGame():
+        state.current = GameState.quit
+    root.add(MenuNode("Exit", exitGame, K_x))
+
+    return createMenu(root, screenSize)
+
+
+def getPauseMenu(state: StateManager, screenSize: (int, int)) -> Menu:
+    root = MenuNode("Game Paused")
+
+    def resume():
+        state.current = GameState.inGame
+    root.add(MenuNode("Resume", resume, K_r))
+
+    root.add(getOptions())
+
+    def endGame():
+        state.current = GameState.mainMenu
+        root.menu.reset()
+    root.add(MenuNode("End Game", endGame, K_e))
+
+    def exitGame():
+        state.current = GameState.quit
+    root.add(MenuNode("Exit", exitGame, K_x))
+
+    return createMenu(root, screenSize)
 
 
 def main():
@@ -111,29 +157,38 @@ def main():
     bots = [BotController(paddle1, ball)]
 
     # menu
-    state = GameState()
-    menu = getMainMenu(state, screen.get_size())
+    state = StateManager()
+    mainMenu = getMainMenu(state, screen.get_size())
+    pauseMenu = getPauseMenu(state, screen.get_size())
 
     # game loop
-    while state.isRunning:
+    while state.current != GameState.quit:
         clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == QUIT or event.type == KEYDOWN and event.mod & KMOD_ALT and event.key == K_F4:
-                state.isRunning = False
+                state.current = GameState.quit
+                break
 
-            if state.inMenu:
-                menu.handle_event(event)
-            else:
+            if state.current == GameState.mainMenu:
+                mainMenu.handle_event(event)
+            elif state.current == GameState.pauseMenu:
+                pauseMenu.handle_event(event)
+            elif state.current == GameState.inGame:
                 if event.type == KEYDOWN and event.key == K_ESCAPE:
-                    state.inMenu = True
+                    state.current = GameState.pauseMenu
                     continue
 
                 for player in players:
                     if player.handle_event(event):
                         break
 
-        if not state.inMenu:
+        if state.current == GameState.quit:
+            screen.fill(THECOLORS['black'])
+            pygame.display.flip()
+            break
+
+        if state.current == GameState.inGame:
             for bot in bots:
                 bot.update()
 
@@ -142,8 +197,10 @@ def main():
         screen.blit(background, (0, 0))
         sprites.draw(screen)
 
-        if state.inMenu:
-            menu.draw(screen)
+        if state.current == GameState.mainMenu:
+            mainMenu.draw(screen)
+        elif state.current == GameState.pauseMenu:
+            pauseMenu.draw(screen)
 
         pygame.display.flip()
 

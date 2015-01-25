@@ -75,6 +75,7 @@ class MenuNode:
 
     def invoke(self):
         if len(self.nodes) > 0:
+            self.selected = 0
             self.menu.current = self
         elif self.callback:
             self.callback()
@@ -166,6 +167,13 @@ class Menu:
         node.init(self)
 
     @property
+    def root(self) -> MenuNode:
+        node = self.current
+        while node.parent:
+            node = node.parent
+        return node
+
+    @property
     def topleft(self) -> (int, int):
         return self._topleft
 
@@ -186,6 +194,10 @@ class Menu:
         self._midtop = value
         if self.imageInited:
             self._topleft = (value[0] - int(self.image.get_size()[0]/2), value[1])
+
+    def reset(self):
+        self.current = self.root
+        self.current.selected = 0
 
     def handle_event(self, event: EventType) -> bool:
         if event.type != KEYDOWN:
@@ -211,11 +223,7 @@ class Menu:
                 sizes = [n.getSize()] + list(maxSize(c) for c in n.nodes)
                 return tuple(max(s[d] for s in sizes) for d in range(2))
 
-            node = self.current
-            while node.parent:
-                node = node.parent
-
-            size = maxSize(node)
+            size = maxSize(self.root)
 
             import drawutil
             self.image = drawutil.rect(size, self.backgroundColor, self.fontPadding, self.borderColor)
