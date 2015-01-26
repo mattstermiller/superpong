@@ -3,6 +3,8 @@ from pygame.constants import *
 from pygame import Surface
 from pygame.event import EventType
 from pygame.font import Font
+import pygame
+from config import Config
 
 
 # forward declarations for type annotations
@@ -29,9 +31,9 @@ class MenuNode:
         self.nodes = []
         self.selected = 0
 
-    def init(self, menu):
+    def init(self, menu: Menu):
         self.menu = menu
-        self.image = menu.font.render(self.text, 1, menu.foreColor)
+        self.image = menu.font.render(self.text, True, menu.foreColor)
         self.rect = self.image.get_rect()
         for node in self.nodes:
             node.init(menu)
@@ -142,6 +144,45 @@ class RadioMenuNode(CheckMenuNode):
         for node in self.parent.nodes:
             if node is not self:
                 node.checked = False
+
+
+class KeyBindMenuNode(MenuNode):
+    def __init__(self, bindingName: str, configName: str, config: Config, callback=None, key: int=None):
+        MenuNode.__init__(self, bindingName + ': <press any key>', callback, key)
+
+        self.bindingName = bindingName
+        self.configName = configName
+        self.config = config
+
+        self.displayImage = None
+        self.listenImage = None
+
+    def init(self, menu: Menu):
+        MenuNode.init(self, menu)
+        self.listenImage = self.image
+
+        def bind(key):
+            text = '{}: {}'.format(self.bindingName, pygame.key.name(key))
+            self.displayImage = self.menu.font.render(text, True, self.menu.foreColor)
+            self.image = self.displayImage
+
+        self.config.subscribe(self.configName, bind)
+
+    def invoke(self):
+        self.image = self.listenImage
+        self.parent.handle_event = self.listen
+
+    def listen(self, event: EventType) -> bool:
+        if event.key != K_ESCAPE:
+            self.config[self.configName] = event.key
+            self.config.save()
+            if self.callback:
+                self.callback(event.key)
+        else:
+            self.image = self.displayImage
+
+        del self.parent.handle_event
+        return True
 
 
 class Menu:

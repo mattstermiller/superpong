@@ -51,8 +51,9 @@ class StateManager:
 
 
 class Game:
-    def __init__(self, state: StateManager):
+    def __init__(self, state: StateManager, conf: Config):
         self.state = state
+        self.config = conf
 
         table = Table()
         self.ball = Ball(table)
@@ -66,13 +67,13 @@ class Game:
         for sprite in [self.ball] + self.paddles:
             sprite.reset()
 
-        self.players = [PlayerController(self.paddles[0], K_w, K_s)]
+        self.players = [PlayerController(self.paddles[0], self.config, 1)]
         self.bots = []
 
         if players == 1:
             self.bots.append(BotController(self.paddles[1], self.ball))
         elif players == 2:
-            self.players.append(PlayerController(self.paddles[1], K_UP, K_DOWN))
+            self.players.append(PlayerController(self.paddles[1], self.config, 2))
 
     def handle_event(self, event: EventType) -> bool:
         if event.type == KEYDOWN and event.key == K_ESCAPE:
@@ -105,21 +106,28 @@ def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:
     return menu
 
 
-def getOptions() -> MenuNode:
+def getOptions(conf: Config) -> MenuNode:
     options = MenuNode("Options", key=K_o)
 
     video = MenuNode("Video", key=K_v)
     video.add(CheckMenuNode("Full Screen", key=K_f))
     video.add(MenuNode("Resolution", key=K_r))
-
     options.add(video)
+
     options.add(MenuNode("Audio", key=K_a))
-    options.add(MenuNode("Key Bindings", key=K_k))
+
+    keys = MenuNode("Key Bindings", key=K_k)
+
+    keys.add(KeyBindMenuNode("P1 Up", 'p1up', conf))
+    keys.add(KeyBindMenuNode("P1 Down", 'p1down', conf))
+    keys.add(KeyBindMenuNode("P2 Up", 'p2up', conf))
+    keys.add(KeyBindMenuNode("P2 Down", 'p2down', conf))
+    options.add(keys)
 
     return options
 
 
-def getMainMenu(state: StateManager, game: Game, screenSize: (int, int)) -> Menu:
+def getMainMenu(screenSize: (int, int), state: StateManager, conf: Config, game: Game) -> Menu:
     root = MenuNode("Super Pong 2015")
 
     newGame = MenuNode("New Game", key=K_n)
@@ -128,41 +136,47 @@ def getMainMenu(state: StateManager, game: Game, screenSize: (int, int)) -> Menu
         game.start(1)
         state.current = GameState.inGame
         root.menu.reset()
-    newGame.add(MenuNode("Single Player", play1, K_s))
+
+    newGame.add(MenuNode("One Player", play1, K_o))
 
     def play2():
         game.start(2)
         state.current = GameState.inGame
         root.menu.reset()
+
     newGame.add(MenuNode("Two Players", play2, K_t))
 
     root.add(newGame)
 
-    root.add(getOptions())
+    root.add(getOptions(conf))
 
     def exitGame():
         state.current = GameState.quit
+
     root.add(MenuNode("Exit", exitGame, K_x))
 
     return createMenu(root, screenSize)
 
 
-def getPauseMenu(state: StateManager, screenSize: (int, int)) -> Menu:
+def getPauseMenu(screenSize: (int, int), state: StateManager, conf: Config) -> Menu:
     root = MenuNode("Game Paused")
 
     def resume():
         state.current = GameState.inGame
+
     root.add(MenuNode("Resume", resume, K_r))
 
-    root.add(getOptions())
+    root.add(getOptions(conf))
 
     def endGame():
         state.current = GameState.mainMenu
         root.menu.reset()
+
     root.add(MenuNode("End Game", endGame, K_e))
 
     def exitGame():
         state.current = GameState.quit
+
     root.add(MenuNode("Exit", exitGame, K_x))
 
     return createMenu(root, screenSize)
@@ -185,15 +199,19 @@ def main():
 
     clock = pygame.time.Clock()
 
+    conf = Config('settings.config')
+    conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN}
+    conf.load()
+
     # viewport
     gameArea = Vector2(1.5, 1)
     screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
     PongSprite.viewport = Viewport(screenArea, gameArea)
 
     state = StateManager()
-    game = Game(state)
-    mainMenu = getMainMenu(state, game, screen.get_size())
-    pauseMenu = getPauseMenu(state, screen.get_size())
+    game = Game(state, conf)
+    mainMenu = getMainMenu(screen.get_size(), state, conf, game)
+    pauseMenu = getPauseMenu(screen.get_size(), state, conf)
 
     # game loop
     while state.current != GameState.quit:

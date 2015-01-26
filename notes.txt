@@ -1,7 +1,3 @@
-classes
-    Controller
-        load bindings
-
 ball collision
     treat wall pieces as sprites
 measure actual delta time

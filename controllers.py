@@ -1,15 +1,22 @@
 from pygame.constants import *
 from pygame.event import EventType
 from pong import Paddle, Ball
+from config import Config
 
 
 class PlayerController():
-    def __init__(self, paddle: Paddle, upKey: int, downKey: int):
+    def __init__(self, paddle: Paddle, config: Config, playerNum: int):
         self.paddle = paddle
-        self.upKey = upKey
-        self.downKey = downKey
         self.upPressed = False
         self.downPressed = False
+
+        def setUp(key):
+            self.upKey = key
+        def setDown(key):
+            self.downKey = key
+
+        config.subscribe('p{}up'.format(playerNum), setUp)
+        config.subscribe('p{}down'.format(playerNum), setDown)
 
     def handle_event(self, event: EventType) -> bool:
         if event.type not in [KEYDOWN, KEYUP]:
