@@ -5,6 +5,7 @@ from pygame import Surface
 from pygame import draw
 from pygame.color import THECOLORS
 from pygame.math import Vector2
+import collision
 
 
 class PongSprite(Sprite):
@@ -14,8 +15,18 @@ class PongSprite(Sprite):
         Sprite.__init__(self)
         self.rect = Rect(0, 0, 0, 0)
         self.size = Rect(0, 0, 0, 0)
+        self._halfSize = None
         self.pos = Vector2()
         self.vel = Vector2()
+
+    @property
+    def halfSize(self):
+        if self._halfSize is None:
+            self._halfSize = tuple(d/2 for d in self.size)
+        return self._halfSize
+
+    def collide(self, other):
+        return collision.rect_rect(self.pos, self.halfSize, other.pos, other.halfSize)
 
 
 class Table(PongSprite):
@@ -105,9 +116,10 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
-    def __init__(self, table: Table):
+    def __init__(self, table: Table, paddles: []):
         PongSprite.__init__(self)
         self.table = table
+        self.paddles = paddles
 
         self.radius = 0.01
         self.size = Vector2(self.radius*2, self.radius*2)
@@ -123,7 +135,7 @@ class Ball(PongSprite):
 
     def reset(self):
         self.pos = Vector2()
-        self.vel = Vector2(0.1, 0.3)
+        self.vel = Vector2(0.3, 0.2)
 
     def update(self):
         delta = 1/60
@@ -138,11 +150,12 @@ class Ball(PongSprite):
             else:
                 move = None
             self.pos += incr
-            self._collide()
+            if self._collide():
+                break
 
         self.viewport.updateRectPos(self)
 
-    def _collide(self):
+    def _collide(self) -> bool:
         maxDist = self.table.innerSize.y/2 - self.radius
         if self.pos.y >= maxDist:
             self.pos.y = maxDist
@@ -150,3 +163,13 @@ class Ball(PongSprite):
         elif self.pos.y <= -maxDist:
             self.pos.y = -maxDist
             self.vel.y *= -1
+
+        for p in self.paddles:
+            projection = self.collide(p)
+            if projection:
+                self.pos += projection
+                # todo: calculate elliptical normal
+                self.vel.x *= -1
+                return True
+
+        return False

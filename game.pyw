@@ -56,8 +56,8 @@ class Game:
         self.config = conf
 
         table = Table()
-        self.ball = Ball(table)
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
+        self.ball = Ball(table, self.paddles)
         self.sprites = pygame.sprite.RenderPlain(table, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
