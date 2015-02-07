@@ -4,7 +4,7 @@ from collision import *
 from pygame.math import Vector2
 
 
-class RectRectTests(TestCase):
+class rect_rect_tests(TestCase):
     def assertColliding(self, center, size, expected):
         r1c = Vector2(center)
         r1s = size
@@ -77,6 +77,46 @@ class RectRectTests(TestCase):
 
     def test_cornerIntrusionYLowerRight_projectionSmallest(self):
         self.assertColliding((40, 25), (2, 1), Vector2(0, 1))
+
+
+class ellipticNormal_tests(TestCase):
+    def assertAngleEqual_45exp2(self, expectedAngle, moverPos):
+        normal = ellipticNormal(Vector2(moverPos), Vector2(), 2)
+        angle = Vector2().angle_to(normal)
+        self.assertAlmostEqual(expectedAngle, angle, 4)
+
+    def test_45exp2_firstQuad(self):
+        self.assertAngleEqual_45exp2(22.5, (1, 1))
+
+    def test_45exp2_secondQuad(self):
+        self.assertAngleEqual_45exp2(180-22.5, (-1, 1))
+
+    def test_45exp2_thirdQuad(self):
+        self.assertAngleEqual_45exp2(-180+22.5, (-1, -1))
+
+    def test_45exp2_fourthQuad(self):
+        self.assertAngleEqual_45exp2(-22.5, (1, -1))
+
+
+    def assertAlmostEqual_60exp4(self, expectedAngle, inputAngle):
+        base = Vector2(2, 1)
+        pos = base + vectorFromPolar((1, inputAngle))
+        normal = ellipticNormal(pos, base, 4)
+        angle = Vector2().angle_to(normal)
+        self.assertAlmostEqual(expectedAngle, angle, 3)
+
+    def test_60exp4_firstQuad(self):
+        self.assertAlmostEqual_60exp4(17.7777, 60)
+
+    def test_60exp4_secondQuad(self):
+        self.assertAlmostEqual_60exp4(180-17.7777, 120)
+
+    def test_60exp4_thirdQuad(self):
+        self.assertAlmostEqual_60exp4(-180+17.7777, -120)
+
+    def test_60exp4_fourthQuad(self):
+        self.assertAlmostEqual_60exp4(-17.7777, -60)
+
 
 if __name__ == '__main__':
     unittest.main()

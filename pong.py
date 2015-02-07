@@ -168,8 +168,9 @@ class Ball(PongSprite):
             projection = self.collide(p)
             if projection:
                 self.pos += projection
-                # todo: calculate elliptical normal
-                self.vel.x *= -1
+                normal = collision.ellipticNormal(self.pos, p.pos, 4)
+                # todo: take paddle's vel into account
+                self.vel.reflect_ip(normal)
                 return True
 
         return False
