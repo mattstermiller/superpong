@@ -1,6 +1,12 @@
-ball collision
-    treat wall pieces as sprites
+score display
+
+add wall corners
 measure actual delta time
+
+menu
+    add resolution choices
+    implement fullscreen
+    underline hotkey char
 
 
 95 behavior

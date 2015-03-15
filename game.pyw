@@ -51,17 +51,21 @@ class StateManager:
 
 
 class Game:
+    SCORE_LIMIT = 9
+
     def __init__(self, state: StateManager, conf: Config):
         self.state = state
         self.config = conf
 
         table = Table()
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
-        self.ball = Ball(table, self.paddles)
+        self.ball = Ball(table, self.paddles, self)
         self.sprites = pygame.sprite.RenderPlain(table, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
         self.bots = []
+
+        self.scores = [0, 0]
 
     def start(self, players: int):
         for sprite in [self.ball] + self.paddles:
@@ -74,6 +78,13 @@ class Game:
             self.bots.append(BotController(self.paddles[1], self.ball))
         elif players == 2:
             self.players.append(PlayerController(self.paddles[1], self.config, 2))
+
+    def score(self, playerNum: int):
+        self.scores[playerNum] += 1
+
+        if self.scores[playerNum] == self.SCORE_LIMIT:
+            pass
+            #end game
 
     def handle_event(self, event: EventType) -> bool:
         if event.type == KEYDOWN and event.key == K_ESCAPE:
@@ -132,19 +143,13 @@ def getMainMenu(screenSize: (int, int), state: StateManager, conf: Config, game:
 
     newGame = MenuNode("New Game", key=K_n)
 
-    def play1():
-        game.start(1)
+    def play(players: int):
+        game.start(players)
         state.current = GameState.inGame
         root.menu.reset()
 
-    newGame.add(MenuNode("One Player", play1, K_o))
-
-    def play2():
-        game.start(2)
-        state.current = GameState.inGame
-        root.menu.reset()
-
-    newGame.add(MenuNode("Two Players", play2, K_t))
+    newGame.add(MenuNode("One Player", lambda: play(1), K_o))
+    newGame.add(MenuNode("Two Players", lambda: play(2), K_t))
 
     root.add(newGame)
 

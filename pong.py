@@ -5,6 +5,7 @@ from pygame import Surface
 from pygame import draw
 from pygame.color import THECOLORS
 from pygame.math import Vector2
+from random import Random
 import collision
 
 
@@ -97,11 +98,11 @@ class Paddle(PongSprite):
         speed = 0.6*delta
         self.pos.y += speed*self.direction
 
-        maxDist = self.table.innerSize.y/2 - self.size.y/2
-        if self.pos.y > maxDist:
-            self.pos.y = maxDist
-        elif self.pos.y < -maxDist:
-            self.pos.y = -maxDist
+        maxYDist = self.table.innerSize.y/2 - self.size.y/2
+        if self.pos.y > maxYDist:
+            self.pos.y = maxYDist
+        elif self.pos.y < -maxYDist:
+            self.pos.y = -maxYDist
 
         self.viewport.updateRectPos(self)
 
@@ -116,10 +117,12 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
-    def __init__(self, table: Table, paddles: []):
+    def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
         self.table = table
         self.paddles = paddles
+        self.game = game
+        self.rand = Random()
 
         self.radius = 0.01
         self.size = Vector2(self.radius*2, self.radius*2)
@@ -133,15 +136,18 @@ class Ball(PongSprite):
         self.image.fill((0, 0, 0, 0))
         draw.ellipse(self.image, THECOLORS['white'], Rect((0, 0), self.rect.size))
 
-    def reset(self):
+    def reset(self, dir: int=0):
         self.pos = Vector2()
-        self.vel = Vector2(0.3, 0.2)
+        if dir == 0:
+            dir = -1 if self.rand.random() < 0.5 else 1
+        angle = 180 if dir < 0 else 0
+        self.vel = collision.vectorFromPolar((0.4, self.rand.gauss(angle, 27)))
 
     def update(self):
         delta = 1/60
         move = self.vel*delta
 
-        # move in small increments so that the ball cannot pass through objects when travelling quickly
+        # move in small increments so that the ball cannot pass through objects when traveling quickly
         while move:
             incr = Vector2(move)
             if incr.length_squared() > self.radius**2:
@@ -156,14 +162,25 @@ class Ball(PongSprite):
         self.viewport.updateRectPos(self)
 
     def _collide(self) -> bool:
-        maxDist = self.table.innerSize.y/2 - self.radius
-        if self.pos.y >= maxDist:
-            self.pos.y = maxDist
+        # wall collision
+        maxYDist = self.table.innerSize.y/2 - self.radius
+        if self.pos.y >= maxYDist:
+            self.pos.y = maxYDist
             self.vel.y *= -1
-        elif self.pos.y <= -maxDist:
-            self.pos.y = -maxDist
+        elif self.pos.y <= -maxYDist:
+            self.pos.y = -maxYDist
             self.vel.y *= -1
 
+        # score
+        maxXDist = self.table.size.x/2 + self.radius
+        if self.pos.x >= maxXDist:
+            self.vel = Vector2()
+            self.game.score(0)
+        elif self.pos.x <= -maxXDist:
+            self.vel = Vector2()
+            self.game.score(1)
+
+        # paddle collision
         for p in self.paddles:
             projection = self.collide(p)
             if projection:
