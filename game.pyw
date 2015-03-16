@@ -46,22 +46,20 @@ class GameState(Enum):
 
 
 class Game:
-    SCORE_LIMIT = 9
-
     def __init__(self, screen, conf: Config):
         self.screen = screen
         self.config = conf
         self.state = GameState.mainMenu
 
         table = Table()
+        self.scoreBoard = ScoreBoard()
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
-        self.ball = Ball(table, self.paddles, self)
-        self.sprites = pygame.sprite.RenderPlain(table, self.ball, self.paddles[0], self.paddles[1])
+        self.ball = Ball(table, self.paddles, self.scoreBoard)
+        self.sprites = pygame.sprite.RenderPlain(table, self.scoreBoard, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
         self.bots = []
 
-        self.scores = [0, 0]
 
         self.image = pygame.Surface(screen.get_size()).convert()
         self.image.fill(THECOLORS['black'])
@@ -79,13 +77,6 @@ class Game:
             self.bots.append(BotController(self.paddles[1], self.ball))
         elif players == 2:
             self.players.append(PlayerController(self.paddles[1], self.config, 2))
-
-    def score(self, playerNum: int):
-        self.scores[playerNum] += 1
-
-        if self.scores[playerNum] == self.SCORE_LIMIT:
-            pass
-            #end game
 
     def handle_event(self, event: EventType) -> bool:
         if event.type == KEYDOWN and event.key == K_ESCAPE:

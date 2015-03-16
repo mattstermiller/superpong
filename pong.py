@@ -30,6 +30,24 @@ class PongSprite(Sprite):
         return collision.rect_rect(self.pos, self.halfSize, other.pos, other.halfSize)
 
 
+class ScoreBoard(PongSprite):
+    SCORE_LIMIT = 9
+
+    def __init__(self):
+        PongSprite.__init__(self)
+
+        self.scores = [0, 0]
+        self.winner = None
+
+        # self.image =
+
+    def score(self, playerNum: int):
+        self.scores[playerNum] += 1
+
+        if self.scores[playerNum] == self.SCORE_LIMIT:
+            self.winner = playerNum
+
+
 class Table(PongSprite):
     def __init__(self):
         PongSprite.__init__(self)
@@ -117,11 +135,11 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
-    def __init__(self, table: Table, paddles: [], game):
+    def __init__(self, table: Table, paddles: [], scoreBoard: ScoreBoard):
         PongSprite.__init__(self)
         self.table = table
         self.paddles = paddles
-        self.game = game
+        self.scoreBoard = scoreBoard
         self.rand = Random()
 
         self.radius = 0.01
@@ -175,10 +193,10 @@ class Ball(PongSprite):
         maxXDist = self.table.size.x/2 + self.radius
         if self.pos.x >= maxXDist:
             self.vel = Vector2()
-            self.game.score(0)
+            self.scoreBoard.score(0)
         elif self.pos.x <= -maxXDist:
             self.vel = Vector2()
-            self.game.score(1)
+            self.scoreBoard.score(1)
 
         # paddle collision
         for p in self.paddles:
