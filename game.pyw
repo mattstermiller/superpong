@@ -45,17 +45,13 @@ class GameState(Enum):
     quit = 4
 
 
-class StateManager:
-    def __init__(self):
-        self.current = GameState.mainMenu
-
-
 class Game:
     SCORE_LIMIT = 9
 
-    def __init__(self, state: StateManager, conf: Config):
-        self.state = state
+    def __init__(self, screen, conf: Config):
+        self.screen = screen
         self.config = conf
+        self.state = GameState.mainMenu
 
         table = Table()
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
@@ -67,7 +63,12 @@ class Game:
 
         self.scores = [0, 0]
 
+        self.image = pygame.Surface(screen.get_size()).convert()
+        self.image.fill(THECOLORS['black'])
+
     def start(self, players: int):
+        self.state = GameState.inGame
+
         for sprite in [self.ball] + self.paddles:
             sprite.reset()
 
@@ -88,7 +89,7 @@ class Game:
 
     def handle_event(self, event: EventType) -> bool:
         if event.type == KEYDOWN and event.key == K_ESCAPE:
-            self.state.current = GameState.pauseMenu
+            self.state = GameState.pauseMenu
             return True
 
         for player in self.players:
@@ -102,6 +103,11 @@ class Game:
             bot.update()
 
         self.sprites.update()
+
+    def draw(self):
+        self.screen.blit(self.image, (0, 0))
+
+        self.sprites.draw(self.screen)
 
 
 def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:
@@ -138,14 +144,13 @@ def getOptions(conf: Config) -> MenuNode:
     return options
 
 
-def getMainMenu(screenSize: (int, int), state: StateManager, conf: Config, game: Game) -> Menu:
+def getMainMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
     root = MenuNode("Super Pong 2015")
 
     newGame = MenuNode("New Game", key=K_n)
 
     def play(players: int):
         game.start(players)
-        state.current = GameState.inGame
         root.menu.reset()
 
     newGame.add(MenuNode("One Player", lambda: play(1), K_o))
@@ -156,31 +161,31 @@ def getMainMenu(screenSize: (int, int), state: StateManager, conf: Config, game:
     root.add(getOptions(conf))
 
     def exitGame():
-        state.current = GameState.quit
+        game.state = GameState.quit
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
     return createMenu(root, screenSize)
 
 
-def getPauseMenu(screenSize: (int, int), state: StateManager, conf: Config) -> Menu:
+def getPauseMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
     root = MenuNode("Game Paused")
 
     def resume():
-        state.current = GameState.inGame
+        game.state = GameState.inGame
 
     root.add(MenuNode("Resume", resume, K_r))
 
     root.add(getOptions(conf))
 
     def endGame():
-        state.current = GameState.mainMenu
+        game.state = GameState.mainMenu
         root.menu.reset()
 
     root.add(MenuNode("End Game", endGame, K_e))
 
     def exitGame():
-        state.current = GameState.quit
+        game.state = GameState.quit
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
@@ -196,12 +201,6 @@ def main():
     pygame.display.set_caption('Super Pong 2015')
     pygame.mouse.set_visible(False)
 
-    background = pygame.Surface(screen.get_size()).convert()
-    background.fill(THECOLORS['black'])
-
-    screen.blit(background, (0, 0))
-    pygame.display.flip()
-
     clock = pygame.time.Clock()
 
     conf = Config('settings.config')
@@ -213,41 +212,39 @@ def main():
     screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
     PongSprite.viewport = Viewport(screenArea, gameArea)
 
-    state = StateManager()
-    game = Game(state, conf)
-    mainMenu = getMainMenu(screen.get_size(), state, conf, game)
-    pauseMenu = getPauseMenu(screen.get_size(), state, conf)
+    game = Game(screen, conf)
+    mainMenu = getMainMenu(screen.get_size(), game, conf)
+    pauseMenu = getPauseMenu(screen.get_size(), game, conf)
 
     # game loop
-    while state.current != GameState.quit:
+    while game.state != GameState.quit:
         clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == QUIT or event.type == KEYDOWN and event.mod & KMOD_ALT and event.key == K_F4:
-                state.current = GameState.quit
+                game.state = GameState.quit
                 break
 
-            if state.current == GameState.mainMenu:
+            if game.state == GameState.mainMenu:
                 mainMenu.handle_event(event)
-            elif state.current == GameState.pauseMenu:
+            elif game.state == GameState.pauseMenu:
                 pauseMenu.handle_event(event)
-            elif state.current == GameState.inGame:
+            elif game.state == GameState.inGame:
                 game.handle_event(event)
 
-        if state.current == GameState.quit:
+        if game.state == GameState.quit:
             screen.fill(THECOLORS['black'])
             pygame.display.flip()
             break
 
-        if state.current == GameState.inGame:
+        if game.state == GameState.inGame:
             game.update()
 
-        screen.blit(background, (0, 0))
-        game.sprites.draw(screen)
+        game.draw()
 
-        if state.current == GameState.mainMenu:
+        if game.state == GameState.mainMenu:
             mainMenu.draw(screen)
-        elif state.current == GameState.pauseMenu:
+        elif game.state == GameState.pauseMenu:
             pauseMenu.draw(screen)
 
         pygame.display.flip()
