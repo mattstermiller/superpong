@@ -73,21 +73,60 @@ class ScoreBoard(PongSprite):
         self.winner = None
 
         self.size = Vector2(1, Table.WALL_SIZE)
-        self.pos = Vector2(0, 0.5-(0.5*Table.WALL_SIZE))
+        self.pos = Vector2(0, 0.5-(Table.WALL_SIZE/2))
 
         self.viewport.updateRect(self)
 
+        heightPx = self.viewport.translateSize(self.size)[1]
+        self.font = pygame.font.Font(None, int(heightPx))
+
         self.image = Surface(self.rect.size).convert_alpha()
+        self._renderScores()
+
+        # setup score message sprites
+        messageFont = pygame.font.Font(None, int(heightPx*3))
+
+        self.scoreMessages = []
+        names = ["Blue", "Red"]
+        for i in range(2):
+            msg = PongSprite()
+            msg.image = messageFont.render("{} point!".format(names[i]), True, Paddle.COLORS[i])
+
+            msg.rect = msg.image.get_rect()
+            pos = self.viewport.translatePos((0.55 * [-1, 1][i], 0.4))
+            if i == 0:
+                msg.rect.topleft = pos
+            else:
+                msg.rect.topright = pos
+
+            self.scoreMessages.append(msg)
+
+    def _renderScores(self):
         self.image.fill((0, 0, 0, 0))
+
+        for i in range(2):
+            img = self.font.render(str(self.scores[i]), True, THECOLORS['black'])
+            imgRect = img.get_rect()
+            x = 0 if i == 0 else self.rect.width - imgRect.width
+            y = (self.rect.height - imgRect.height)/2
+            self.image.blit(img, (x, y))
 
     def score(self, playerNum: int):
         self.scores[playerNum] += 1
+        self._renderScores()
 
-        if self.scores[playerNum] == self.SCORE_LIMIT:
+        if self.scores[playerNum] < self.SCORE_LIMIT:
+            self.scoreMessages[playerNum].add(self.groups()[0])
+
+            # set timer to remove score message and reset ball
+            pass
+        else:
             self.winner = playerNum
 
 
 class Paddle(PongSprite):
+    COLORS = [(32, 32, 240), (192, 32, 32)]
+
     def __init__(self, table: Table, side: int):
         PongSprite.__init__(self)
         self.table = table
@@ -98,10 +137,7 @@ class Paddle(PongSprite):
         self.direction = 0
         self.reset()
 
-        if self.side < 0:
-            paddleColor = (32, 32, 240)
-        else:
-            paddleColor = (192, 32, 32)
+        paddleColor = self.COLORS[0 if self.side < 0 else 1]
 
         self.viewport.updateRect(self)
 
