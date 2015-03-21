@@ -52,17 +52,18 @@ class Game:
         self.state = GameState.mainMenu
 
         table = Table()
+
         self.scoreBoard = ScoreBoard()
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
         self.ball = Ball(table, self.paddles, self.scoreBoard)
-        self.sprites = pygame.sprite.RenderPlain(table, self.scoreBoard, self.ball, self.paddles[0], self.paddles[1])
+        self.sprites = pygame.sprite.RenderPlain(self.scoreBoard, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
         self.bots = []
 
-
         self.image = pygame.Surface(screen.get_size()).convert()
         self.image.fill(THECOLORS['black'])
+        self.image.blit(table.image, table.rect)
 
     def start(self, players: int):
         self.state = GameState.inGame
@@ -144,8 +145,8 @@ def getMainMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
         game.start(players)
         root.menu.reset()
 
-    newGame.add(MenuNode("One Player", lambda: play(1), K_o))
-    newGame.add(MenuNode("Two Players", lambda: play(2), K_t))
+    newGame.add(MenuNode("1 Player", lambda: play(1), K_1))
+    newGame.add(MenuNode("2 Players", lambda: play(2), K_2))
 
     root.add(newGame)
 

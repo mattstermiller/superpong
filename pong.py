@@ -30,6 +30,39 @@ class PongSprite(Sprite):
         return collision.rect_rect(self.pos, self.halfSize, other.pos, other.halfSize)
 
 
+class Table:
+    WALL_SIZE = 0.045
+
+    def __init__(self):
+        viewport = PongSprite.viewport
+
+        wallColor = THECOLORS['white']
+        centerLineColor = THECOLORS['red']
+
+        self.pos = Vector2()
+        self.size = Vector2(1.5, 1)
+        self.innerSize = self.size.elementwise() - self.WALL_SIZE*2
+
+        self.rect = Rect(0, 0, 0, 0)
+        viewport.updateRect(self)
+
+        pixelWallSize = viewport.translateSize((self.WALL_SIZE, self.WALL_SIZE))
+        self.image = Surface(self.rect.size).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
+
+        # draw center line
+        lineDivisions = 15
+        lineRect = Rect((0, 0), viewport.translateSize((0.005, 1/lineDivisions)))
+        lineRect.centerx = self.rect.width/2
+        for i in range(1, lineDivisions, 2):
+            lineRect.y = lineRect.height*i
+            self.image.fill(centerLineColor, lineRect)
+
+        # draw walls
+        self.image.fill(wallColor, Rect(0, 0, self.rect.width, pixelWallSize.y))
+        self.image.fill(wallColor, Rect(0, self.rect.height - pixelWallSize.y, self.rect.width, pixelWallSize.y))
+
+
 class ScoreBoard(PongSprite):
     SCORE_LIMIT = 9
 
@@ -39,43 +72,19 @@ class ScoreBoard(PongSprite):
         self.scores = [0, 0]
         self.winner = None
 
-        # self.image =
+        self.size = Vector2(1, Table.WALL_SIZE)
+        self.pos = Vector2(0, 0.5-(0.5*Table.WALL_SIZE))
+
+        self.viewport.updateRect(self)
+
+        self.image = Surface(self.rect.size).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
 
     def score(self, playerNum: int):
         self.scores[playerNum] += 1
 
         if self.scores[playerNum] == self.SCORE_LIMIT:
             self.winner = playerNum
-
-
-class Table(PongSprite):
-    def __init__(self):
-        PongSprite.__init__(self)
-
-        wallSize = 0.045
-        wallColor = THECOLORS['white']
-        centerLineColor = THECOLORS['red']
-
-        self.size = Vector2(1.5, 1)
-        self.innerSize = self.size.elementwise() - wallSize*2
-
-        self.viewport.updateRect(self)
-
-        pixelWallSize = self.viewport.translateSize((wallSize, wallSize))
-        self.image = Surface(self.rect.size).convert_alpha()
-        self.image.fill((0, 0, 0, 0))
-
-        # draw center line
-        lineDivisions = 15
-        lineRect = Rect((0, 0), self.viewport.translateSize((0.005, 1/lineDivisions)))
-        lineRect.centerx = self.rect.width/2
-        for i in range(1, lineDivisions, 2):
-            lineRect.y = lineRect.height*i
-            self.image.fill(centerLineColor, lineRect)
-
-        # draw walls
-        self.image.fill(wallColor, Rect(0, 0, self.rect.width, pixelWallSize.y))
-        self.image.fill(wallColor, Rect(0, self.rect.height - pixelWallSize.y, self.rect.width, pixelWallSize.y))
 
 
 class Paddle(PongSprite):
