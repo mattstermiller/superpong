@@ -126,6 +126,7 @@ class ScoreBoard(PongSprite):
 
 
 class Paddle(PongSprite):
+    SPEED = 1.1
     COLORS = [(32, 32, 240), (192, 32, 32)]
 
     def __init__(self, table: Table, side: int):
@@ -158,7 +159,7 @@ class Paddle(PongSprite):
         self.stop()
 
     def update(self, delta: float):
-        speed = 0.6*delta
+        speed = self.SPEED*delta
         self.pos.y += speed*self.direction
 
         maxYDist = self.table.innerSize.y/2 - self.size.y/2
@@ -180,6 +181,8 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
+    START_SPEED = 0.85
+
     def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
         self.table = table
@@ -204,7 +207,8 @@ class Ball(PongSprite):
         if direction == 0:
             direction = -1 if self.rand.random() < 0.5 else 1
         angle = 180 if direction < 0 else 0
-        self.vel = collision.vectorFromPolar((0.4, self.rand.gauss(angle, 27)))
+        angle += self.rand.uniform(-80, 80)
+        self.vel = collision.vectorFromPolar((self.START_SPEED, angle))
 
     def update(self, delta: float):
         move = self.vel*delta
