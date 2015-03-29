@@ -83,36 +83,60 @@ class ScoreBoard(PongSprite):
         self.image = Surface(self.rect.size).convert_alpha()
         self._renderScores()
 
-        # setup score message sprites
+        # setup message sprites
         messageFont = pygame.font.Font(None, int(heightPx*3))
 
-        self.scoreMessages = []
-        for (i, name) in enumerate(["Blue", "Red"]):
-            msg = PongSprite()
-            msg.image = messageFont.render("{} point!".format(name), True, Paddle.COLORS[i])
-
+        def positionMsg(msg, side):
             msg.rect = msg.image.get_rect()
-            pos = self.viewport.translatePos((0.55 * [-1, 1][i], 0.4))
+            pos = self.viewport.translatePos((0.55 * side, 0.4))
             if i == 0:
                 msg.rect.topleft = pos
             else:
                 msg.rect.topright = pos
 
+        self.scoreMessages = []
+        for (i, name) in enumerate(["Blue", "Red"]):
+            msg = PongSprite()
+            msg.image = messageFont.render("{} point!".format(name), True, Paddle.COLORS[i])
+            positionMsg(msg, [-1, 1][i])
             self.scoreMessages.append(msg)
+
+        self.winnerMessages = []
+        for i in range(2):
+            msg = PongSprite()
+            msg.image = messageFont.render("Winner!", True, Paddle.COLORS[i])
+            positionMsg(msg, [-1, 1][i])
+            self.winnerMessages.append(msg)
+
+        msg = PongSprite()
+        msg.image = messageFont.render("Get Ready!", True, THECOLORS['white'])
+        msg.rect = msg.image.get_rect()
+        msg.rect.center = self.viewport.translatePos((0, 0))
+        print(msg.rect)
+        self.prepareMessage = msg
+
+    def reset(self):
+        self.scores = [0, 0]
+        self.winner = None
+
+        self._show(self.prepareMessage)
 
     def score(self, player: int):
         self.scores[player] += 1
         self._renderScores()
 
         if self.scores[player] < self.SCORE_LIMIT:
-            self.scoreMessages[player].add(self.groups()[0])
+            self._show(self.scoreMessages[player])
         else:
-            # todo: display "Winner!" message
             self.winner = player
+            self._show(self.winnerMessages[player])
 
     def hideMessages(self):
-        for msg in self.scoreMessages:
+        for msg in self.scoreMessages + self.winnerMessages + [self.prepareMessage]:
             msg.kill()
+
+    def _show(self, sprite):
+        sprite.add(self.groups()[0])
 
     def _renderScores(self):
         self.image.fill((0, 0, 0, 0))
@@ -194,7 +218,6 @@ class Ball(PongSprite):
         self.size = Vector2(self.radius*2, self.radius*2)
         self.pos = Vector2()
         self.vel = Vector2()
-        self.reset()
 
         self.viewport.updateRect(self)
 
@@ -202,7 +225,11 @@ class Ball(PongSprite):
         self.image.fill((0, 0, 0, 0))
         draw.ellipse(self.image, THECOLORS['white'], Rect((0, 0), self.rect.size))
 
-    def reset(self, direction: int=0):
+    def reset(self):
+        self.pos = Vector2(-2, 0)
+        self.vel = Vector2()
+
+    def serve(self, direction: int=0):
         self.pos = Vector2()
         if direction == 0:
             direction = -1 if self.rand.random() < 0.5 else 1
@@ -256,7 +283,7 @@ class Ball(PongSprite):
             if projection:
                 self.pos += projection
                 normal = collision.ellipticNormal(self.pos, p.pos, 4)
-                # todo: take paddle's vel into account
+                # todo: prevent multiple collisions from changing direction of ball
                 self.vel.reflect_ip(normal)
                 return True
 

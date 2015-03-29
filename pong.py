@@ -69,7 +69,7 @@ class Game:
     def start(self, players: int):
         self.state = GameState.inGame
 
-        for sprite in [self.ball] + self.paddles:
+        for sprite in self.paddles + [self.ball, self.scoreBoard]:
             sprite.reset()
 
         self.players = [PlayerController(self.paddles[0], self.config, 0)]
@@ -79,6 +79,8 @@ class Game:
             self.bots.append(BotController(self.paddles[1], self.ball))
         elif players == 2:
             self.players.append(PlayerController(self.paddles[1], self.config, 1))
+
+        self.timers.append(Timer(3, self._serveBall))
 
     def score(self, player: int):
         self.scoreBoard.score(player)
@@ -114,9 +116,16 @@ class Game:
 
         self.sprites.draw(self.screen)
 
-    def _serveBall(self, scoringPlayer: int):
+    def _serveBall(self, scoringPlayer: int=None):
         self.scoreBoard.hideMessages()
-        self.ball.reset(1 if scoringPlayer == 0 else -1)
+
+        if scoringPlayer == 0:
+            direction = 1
+        elif scoringPlayer == 1:
+            direction = -1
+        else:
+            direction = 0
+        self.ball.serve(direction)
 
 
 class Timer:

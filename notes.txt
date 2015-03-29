@@ -1,7 +1,10 @@
-score display
+ball speed-up
+fix paddle multi-collision
+sound effects
+bullets
 
 add wall corners
-measure actual delta time
+winner fireworks
 
 menu
     add resolution choices
@@ -41,3 +44,5 @@ polish
         move ball into position
         expand paddles vertically out of thin air
         fade in the middle line
+
+    make AI do an "angry dance" after giving up a point
