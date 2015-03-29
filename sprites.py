@@ -206,6 +206,8 @@ class Paddle(PongSprite):
 
 class Ball(PongSprite):
     START_SPEED = 0.85
+    SPEEDUP = 0.15
+    SPEEDUP_HITS = 10
 
     def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
@@ -218,6 +220,7 @@ class Ball(PongSprite):
         self.size = Vector2(self.radius*2, self.radius*2)
         self.pos = Vector2()
         self.vel = Vector2()
+        self.speedupHits = 0
 
         self.viewport.updateRect(self)
 
@@ -228,6 +231,7 @@ class Ball(PongSprite):
     def reset(self):
         self.pos = Vector2(-2, 0)
         self.vel = Vector2()
+        self.speedupHits = 0
 
     def serve(self, direction: int=0):
         self.pos = Vector2()
@@ -249,12 +253,12 @@ class Ball(PongSprite):
             else:
                 move = None
             self.pos += incr
-            if self._collide():
+            if self._collision():
                 break
 
         self.viewport.updateRectPos(self)
 
-    def _collide(self) -> bool:
+    def _collision(self) -> bool:
         # wall collision
         maxYDist = self.table.innerSize.y/2 - self.radius
         if self.pos.y >= maxYDist:
@@ -285,6 +289,14 @@ class Ball(PongSprite):
                 normal = collision.ellipticNormal(self.pos, p.pos, 4)
                 # todo: prevent multiple collisions from changing direction of ball
                 self.vel.reflect_ip(normal)
+                self._hitPaddle()
                 return True
 
         return False
+
+    def _hitPaddle(self):
+        self.speedupHits += 1
+        if self.speedupHits == self.SPEEDUP_HITS:
+            polar = self.vel.as_polar()
+            self.vel = collision.vectorFromPolar((polar[0] + self.SPEEDUP, polar[1]))
+            self.speedupHits = 0
