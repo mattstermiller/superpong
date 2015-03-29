@@ -43,12 +43,12 @@ class BotController:
         self.paddle = paddle
         self.ball = ball
 
-    def update(self):
-        threshhold = 0.01
+    def update(self, delta: float):
+        threshold = 0.01
         diff = self.ball.pos.y - self.paddle.pos.y
-        if diff > threshhold:
+        if diff > threshold:
             self.paddle.up()
-        elif diff < -threshhold:
+        elif diff < -threshold:
             self.paddle.down()
         else:
             self.paddle.stop()

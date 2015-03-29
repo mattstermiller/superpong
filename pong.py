@@ -156,8 +156,7 @@ class Paddle(PongSprite):
         self.pos = Vector2(0.6 * self.side, 0)
         self.stop()
 
-    def update(self):
-        delta = 1/60
+    def update(self, delta: float):
         speed = 0.6*delta
         self.pos.y += speed*self.direction
 
@@ -199,15 +198,14 @@ class Ball(PongSprite):
         self.image.fill((0, 0, 0, 0))
         draw.ellipse(self.image, THECOLORS['white'], Rect((0, 0), self.rect.size))
 
-    def reset(self, dir: int=0):
+    def reset(self, direction: int=0):
         self.pos = Vector2()
-        if dir == 0:
-            dir = -1 if self.rand.random() < 0.5 else 1
-        angle = 180 if dir < 0 else 0
+        if direction == 0:
+            direction = -1 if self.rand.random() < 0.5 else 1
+        angle = 180 if direction < 0 else 0
         self.vel = collision.vectorFromPolar((0.4, self.rand.gauss(angle, 27)))
 
-    def update(self):
-        delta = 1/60
+    def update(self, delta: float):
         move = self.vel*delta
 
         # move in small increments so that the ball cannot pass through objects when traveling quickly

@@ -90,11 +90,11 @@ class Game:
 
         return False
 
-    def update(self):
+    def update(self, delta: float):
         for bot in self.bots:
-            bot.update()
+            bot.update(delta)
 
-        self.sprites.update()
+        self.sprites.update(delta)
 
     def draw(self):
         self.screen.blit(self.image, (0, 0))
@@ -210,7 +210,7 @@ def main():
 
     # game loop
     while game.state != GameState.quit:
-        clock.tick(60)
+        delta = clock.tick(60) / 1000
 
         for event in pygame.event.get():
             if event.type == QUIT or event.type == KEYDOWN and event.mod & KMOD_ALT and event.key == K_F4:
@@ -230,7 +230,7 @@ def main():
             break
 
         if game.state == GameState.inGame:
-            game.update()
+            game.update(delta)
 
         game.draw()
 
