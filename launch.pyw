@@ -1,3 +1,3 @@
-import game
+import pong
 
-game.main()
+pong.main()

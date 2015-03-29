@@ -1,6 +1,6 @@
 from pygame.constants import *
 from pygame.event import EventType
-from pong import Paddle, Ball
+from sprites import Paddle, Ball
 from config import Config
 
 
