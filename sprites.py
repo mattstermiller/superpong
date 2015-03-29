@@ -229,18 +229,22 @@ class Ball(PongSprite):
         if self.pos.y >= maxYDist:
             self.pos.y = maxYDist
             self.vel.y *= -1
+            return True
         elif self.pos.y <= -maxYDist:
             self.pos.y = -maxYDist
             self.vel.y *= -1
+            return True
 
         # score
         maxXDist = self.table.size.x/2 + self.radius
         if self.pos.x >= maxXDist:
             self.vel = Vector2()
             self.game.score(0)
+            return True
         elif self.pos.x <= -maxXDist:
             self.vel = Vector2()
             self.game.score(1)
+            return True
 
         # paddle collision
         for p in self.paddles:
