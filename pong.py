@@ -55,11 +55,12 @@ class Game:
 
         self.scoreBoard = ScoreBoard()
         self.paddles = [Paddle(table, -1), Paddle(table, 1)]
-        self.ball = Ball(table, self.paddles, self.scoreBoard)
+        self.ball = Ball(table, self.paddles, self)
         self.sprites = pygame.sprite.RenderPlain(self.scoreBoard, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
         self.bots = []
+        self.timers = []
 
         self.image = pygame.Surface(screen.get_size()).convert()
         self.image.fill(THECOLORS['black'])
@@ -71,13 +72,20 @@ class Game:
         for sprite in [self.ball] + self.paddles:
             sprite.reset()
 
-        self.players = [PlayerController(self.paddles[0], self.config, 1)]
+        self.players = [PlayerController(self.paddles[0], self.config, 0)]
         self.bots = []
 
         if players == 1:
             self.bots.append(BotController(self.paddles[1], self.ball))
         elif players == 2:
-            self.players.append(PlayerController(self.paddles[1], self.config, 2))
+            self.players.append(PlayerController(self.paddles[1], self.config, 1))
+
+    def score(self, player: int):
+        self.scoreBoard.score(player)
+
+        if self.scoreBoard.winner is None:
+            # set timer to remove score message and reset ball
+            self.timers.append(Timer(3, lambda: self._serveBall(player)))
 
     def handle_event(self, event: EventType) -> bool:
         if event.type == KEYDOWN and event.key == K_ESCAPE:
@@ -91,6 +99,11 @@ class Game:
         return False
 
     def update(self, delta: float):
+        for timer in self.timers:
+            timer.tick(delta)
+            if timer.isElapsed:
+                self.timers.remove(timer)
+
         for bot in self.bots:
             bot.update(delta)
 
@@ -100,6 +113,29 @@ class Game:
         self.screen.blit(self.image, (0, 0))
 
         self.sprites.draw(self.screen)
+
+    def _serveBall(self, scoringPlayer: int):
+        self.scoreBoard.hideMessages()
+        self.ball.reset(1 if scoringPlayer == 0 else -1)
+
+
+class Timer:
+    def __init__(self, timeoutSeconds: float, action):
+        self.timeoutSeconds = timeoutSeconds
+        self.remaining = timeoutSeconds
+        self.action = action
+
+    @property
+    def isElapsed(self):
+        return self.remaining <= 0
+
+    def tick(self, elapsedSeconds: float):
+        self.remaining -= elapsedSeconds
+        if self.isElapsed:
+            self.action()
+
+    def reset(self):
+        self.remaining = self.timeoutSeconds
 
 
 def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:

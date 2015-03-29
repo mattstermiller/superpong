@@ -87,10 +87,9 @@ class ScoreBoard(PongSprite):
         messageFont = pygame.font.Font(None, int(heightPx*3))
 
         self.scoreMessages = []
-        names = ["Blue", "Red"]
-        for i in range(2):
+        for (i, name) in enumerate(["Blue", "Red"]):
             msg = PongSprite()
-            msg.image = messageFont.render("{} point!".format(names[i]), True, Paddle.COLORS[i])
+            msg.image = messageFont.render("{} point!".format(name), True, Paddle.COLORS[i])
 
             msg.rect = msg.image.get_rect()
             pos = self.viewport.translatePos((0.55 * [-1, 1][i], 0.4))
@@ -101,6 +100,20 @@ class ScoreBoard(PongSprite):
 
             self.scoreMessages.append(msg)
 
+    def score(self, player: int):
+        self.scores[player] += 1
+        self._renderScores()
+
+        if self.scores[player] < self.SCORE_LIMIT:
+            self.scoreMessages[player].add(self.groups()[0])
+        else:
+            # todo: display "Winner!" message
+            self.winner = player
+
+    def hideMessages(self):
+        for msg in self.scoreMessages:
+            msg.kill()
+
     def _renderScores(self):
         self.image.fill((0, 0, 0, 0))
 
@@ -110,18 +123,6 @@ class ScoreBoard(PongSprite):
             x = 0 if i == 0 else self.rect.width - imgRect.width
             y = (self.rect.height - imgRect.height)/2
             self.image.blit(img, (x, y))
-
-    def score(self, playerNum: int):
-        self.scores[playerNum] += 1
-        self._renderScores()
-
-        if self.scores[playerNum] < self.SCORE_LIMIT:
-            self.scoreMessages[playerNum].add(self.groups()[0])
-
-            # set timer to remove score message and reset ball
-            pass
-        else:
-            self.winner = playerNum
 
 
 class Paddle(PongSprite):
@@ -179,11 +180,11 @@ class Paddle(PongSprite):
 
 
 class Ball(PongSprite):
-    def __init__(self, table: Table, paddles: [], scoreBoard: ScoreBoard):
+    def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
         self.table = table
         self.paddles = paddles
-        self.scoreBoard = scoreBoard
+        self.game = game
         self.rand = Random()
 
         self.radius = 0.01
@@ -236,10 +237,10 @@ class Ball(PongSprite):
         maxXDist = self.table.size.x/2 + self.radius
         if self.pos.x >= maxXDist:
             self.vel = Vector2()
-            self.scoreBoard.score(0)
+            self.game.score(0)
         elif self.pos.x <= -maxXDist:
             self.vel = Vector2()
-            self.scoreBoard.score(1)
+            self.game.score(1)
 
         # paddle collision
         for p in self.paddles:

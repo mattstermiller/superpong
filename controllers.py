@@ -15,8 +15,8 @@ class PlayerController():
         def setDown(key):
             self.downKey = key
 
-        config.subscribe('p{}up'.format(playerNum), setUp)
-        config.subscribe('p{}down'.format(playerNum), setDown)
+        config.subscribe('p{}up'.format(playerNum + 1), setUp)
+        config.subscribe('p{}down'.format(playerNum + 1), setDown)
 
     def handle_event(self, event: EventType) -> bool:
         if event.type not in [KEYDOWN, KEYUP]:
