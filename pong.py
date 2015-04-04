@@ -1,7 +1,6 @@
 from menu import *
 from sprites import *
 from controllers import PlayerController, BotController
-from enum import Enum
 
 
 class Viewport:
@@ -20,7 +19,7 @@ class Viewport:
             self.posFactor.y *= -1
             screenTranslate.y *= -1
             self.posTranslate.y -= cameraSize.y
-        self.posTranslate += screenTranslate
+        self.posTranslate = self.posTranslate + screenTranslate
 
     def translateSize(self, size: (float, float)) -> Vector2:
         pixelSize = Vector2(size).elementwise()*self.sizeFactor
@@ -38,7 +37,7 @@ class Viewport:
         sprite.rect.center = self.translatePos(sprite.pos)
 
 
-class GameState(Enum):
+class GameState:
     mainMenu = 1
     pauseMenu = 2
     inGame = 3

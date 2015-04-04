@@ -252,7 +252,7 @@ class Ball(PongSprite):
                 move.scale_to_length(move.length() - self.radius)
             else:
                 move = None
-            self.pos += incr
+            self.pos = self.pos + incr
             if self._collision():
                 break
 
@@ -282,13 +282,14 @@ class Ball(PongSprite):
             return True
 
         # paddle collision
-        for p in self.paddles:
-            projection = self.collide(p)
+        for paddle in self.paddles:
+            projection = self.collide(paddle)
             if projection:
-                self.pos += projection
-                normal = collision.ellipticNormal(self.pos, p.pos, 4)
+                self.pos = self.pos + projection
+                normal = collision.ellipticNormal(self.pos, paddle.pos, 4)
                 # todo: prevent multiple collisions from changing direction of ball
                 self.vel.reflect_ip(normal)
+
                 self._hitPaddle()
                 return True
 
