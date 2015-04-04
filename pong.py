@@ -45,9 +45,11 @@ class GameState:
 
 
 class Game:
-    def __init__(self, screen, conf: Config):
-        self.screen = screen
-        self.config = conf
+    def __init__(self, config: Config):
+        self.config = config
+        self.screen = None
+        self.initVideo()
+
         self.state = GameState.mainMenu
 
         table = Table()
@@ -61,9 +63,19 @@ class Game:
         self.bots = []
         self.timers = []
 
-        self.image = pygame.Surface(screen.get_size()).convert()
+        self.image = pygame.Surface(self.screen.get_size()).convert()
         self.image.fill(THECOLORS['black'])
         self.image.blit(table.image, table.rect)
+
+    def initVideo(self):
+        flags = DOUBLEBUF | HWSURFACE
+        if self.config['fullscreen']:
+            flags |= FULLSCREEN
+        self.screen = pygame.display.set_mode(self.config['resolution'], flags)
+
+        gameArea = Vector2(1.5, 1)
+        screenArea = Rect(0, 0, 3, 2).fit(self.screen.get_rect())
+        PongSprite.viewport = Viewport(screenArea, gameArea)
 
     def start(self, players: int):
         self.state = GameState.inGame
@@ -179,7 +191,7 @@ def getOptions(conf: Config) -> MenuNode:
     return options
 
 
-def getMainMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
+def getMainMenu(game: Game, conf: Config) -> Menu:
     root = MenuNode("Super Pong 2015")
 
     newGame = MenuNode("New Game", key=K_n)
@@ -200,10 +212,10 @@ def getMainMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
-    return createMenu(root, screenSize)
+    return createMenu(root, game.screen.get_size())
 
 
-def getPauseMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
+def getPauseMenu(game: Game, conf: Config) -> Menu:
     root = MenuNode("Game Paused")
 
     def resume():
@@ -224,32 +236,27 @@ def getPauseMenu(screenSize: (int, int), game: Game, conf: Config) -> Menu:
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
-    return createMenu(root, screenSize)
+    return createMenu(root, game.screen.get_size())
 
 
 def main():
+    conf = Config('settings.config')
+    # default settings
+    conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN, 'resolution': (1110, 740)}
+    conf.load()
+
     # display
     pygame.init()
-
-    screen = pygame.display.set_mode((800, 600))
+    game = Game(conf)
+    screen = game.screen
 
     pygame.display.set_caption('Super Pong 2015')
     pygame.mouse.set_visible(False)
 
     clock = pygame.time.Clock()
 
-    conf = Config('settings.config')
-    conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN}
-    conf.load()
-
-    # viewport
-    gameArea = Vector2(1.5, 1)
-    screenArea = Rect(0, 0, 3, 2).fit(screen.get_rect())
-    PongSprite.viewport = Viewport(screenArea, gameArea)
-
-    game = Game(screen, conf)
-    mainMenu = getMainMenu(screen.get_size(), game, conf)
-    pauseMenu = getPauseMenu(screen.get_size(), game, conf)
+    mainMenu = getMainMenu(game, conf)
+    pauseMenu = getPauseMenu(game, conf)
 
     # game loop
     while game.state != GameState.quit:
