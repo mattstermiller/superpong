@@ -112,7 +112,6 @@ class ScoreBoard(PongSprite):
         msg.image = messageFont.render("Get Ready!", True, THECOLORS['white'])
         msg.rect = msg.image.get_rect()
         msg.rect.center = self.viewport.translatePos((0, 0))
-        print(msg.rect)
         self.prepareMessage = msg
 
     def reset(self):

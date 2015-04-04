@@ -32,7 +32,9 @@ class Config:
         self.subscriptions = {}
 
     def __getitem__(self, key):
-        return self.settings[key]
+        if key in self.settings:
+            return self.settings[key]
+        return None
 
     def __setitem__(self, key, value):
         self.settings[key] = value
