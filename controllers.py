@@ -1,6 +1,6 @@
 from pygame.constants import *
 from pygame.event import EventType
-from pong import Paddle, Ball
+from sprites import Paddle, Ball
 from config import Config
 
 
@@ -15,8 +15,8 @@ class PlayerController():
         def setDown(key):
             self.downKey = key
 
-        config.subscribe('p{}up'.format(playerNum), setUp)
-        config.subscribe('p{}down'.format(playerNum), setDown)
+        config.subscribe('p{}up'.format(playerNum + 1), setUp)
+        config.subscribe('p{}down'.format(playerNum + 1), setDown)
 
     def handle_event(self, event: EventType) -> bool:
         if event.type not in [KEYDOWN, KEYUP]:
@@ -43,12 +43,12 @@ class BotController:
         self.paddle = paddle
         self.ball = ball
 
-    def update(self):
-        threshhold = 0.01
+    def update(self, delta: float):
+        threshold = 0.01
         diff = self.ball.pos.y - self.paddle.pos.y
-        if diff > threshhold:
+        if diff > threshold:
             self.paddle.up()
-        elif diff < -threshhold:
+        elif diff < -threshold:
             self.paddle.down()
         else:
             self.paddle.stop()
