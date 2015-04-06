@@ -4,6 +4,7 @@ from pygame import Surface
 from pygame.event import EventType
 from pygame.font import Font
 import pygame
+import pygame.gfxdraw
 from config import Config
 
 
@@ -30,6 +31,7 @@ class MenuNode:
 
         self.nodes = []
         self.selected = 0
+        self.visibleIndex = 0
 
     def init(self, menu: Menu):
         self.menu = menu
@@ -48,7 +50,8 @@ class MenuNode:
         if len(self.nodes) > 0:
             width = max([self.rect.width] + list(n.rect.width for n in self.nodes)) + self.menu.itemHeight*2
             # include room for border top and bottom, menu header, and header padding
-            height = (len(self.nodes) + 3)*self.menu.itemHeight
+            visibleNodes = min(len(self.nodes), self.menu.visibleItems)
+            height = (visibleNodes + 4)*self.menu.itemHeight
             return width, height
         else:
             return 0, 0
@@ -57,10 +60,14 @@ class MenuNode:
         if event.key == K_UP:
             if self.selected > 0:
                 self.selected -= 1
+                if self.selected < self.visibleIndex:
+                    self.visibleIndex -= 1
             return True
         elif event.key == K_DOWN:
             if self.selected < len(self.nodes) - 1:
                 self.selected += 1
+            if self.selected >= self.visibleIndex + self.menu.visibleItems:
+                self.visibleIndex += 1
             return True
         elif event.key == K_RETURN:
             self.nodes[self.selected].invoke()
@@ -68,6 +75,7 @@ class MenuNode:
         elif event.key == K_ESCAPE:
             if self.parent:
                 self.menu.current = self.parent
+            self.visibleIndex = 0
             return True
 
         for node in self.nodes:
@@ -94,11 +102,16 @@ class MenuNode:
         def advance(positions: float=1):
             pos[1] += int(self.menu.itemHeight*positions)
 
-        advance(0.5)
+        advance()
         screen.blit(self.image, pos)
-        advance(2)
+        advance()
 
-        for i, node in enumerate(self.nodes):
+        if self.visibleIndex > 0:
+            screen.blit(self.menu.arrowUp, pos)
+        advance()
+
+        visibleEnd = self.visibleIndex + self.menu.visibleItems
+        for i, node in list(enumerate(self.nodes))[self.visibleIndex:visibleEnd]:
             if i == self.selected:
                 selectedRect = node.rect.copy()
                 selectedRect.topleft = pos
@@ -107,11 +120,15 @@ class MenuNode:
             node.draw(screen, pos)
             advance()
 
+        if len(self.nodes) > visibleEnd:
+            screen.blit(self.menu.arrowDown, pos)
+
 
 class CheckMenuNode(MenuNode):
     def __init__(self, text: str, key: int=None):
         MenuNode.__init__(self, text, None, key)
         self.checked = False
+        self.checkRect = None
 
     def init(self, menu: Menu):
         MenuNode.init(self, menu)
@@ -191,8 +208,8 @@ class Menu:
     KEY_REPEAT_START = 0.35
     KEY_REPEAT_INTERVAL = 0.05
 
-    def __init__(self, node: MenuNode, font: Font, foreColor: Color, selectColor: Color,
-                 backgroundColor: Color=None, borderColor: Color=None, fadeColor: Color=None):
+    def __init__(self, node: MenuNode, font: Font, foreColor: Color, selectColor: Color, backgroundColor: Color=None,
+                 borderColor: Color=None, fadeColor: Color=None, visibleItems: int=5):
         self.current = node
 
         self.font = font
@@ -204,6 +221,7 @@ class Menu:
         self.backgroundColor = backgroundColor
         self.borderColor = borderColor
         self.fadeColor = fadeColor
+        self.visibleItems = visibleItems
 
         self._topleft = (0, 0)
         self._midtop = None
@@ -214,6 +232,26 @@ class Menu:
         """:type: EventType"""
         self.repeatTimeout = None
         """:type: float"""
+
+        # render scroll arrows
+        arrowSize = int(self.itemHeight/3)
+
+        def drawArrow(isDown: bool) -> Surface:
+            image = Surface((arrowSize + 1, self.itemHeight)).convert_alpha()
+            image.fill((0, 0, 0, 0))
+
+            if isDown:
+                sideY = 0
+                pointY = sideY + arrowSize
+            else:
+                sideY = self.itemHeight - self.fontPadding
+                pointY = sideY - arrowSize
+
+            pygame.gfxdraw.filled_trigon(image, 0, sideY, arrowSize-1, sideY, int(arrowSize/2), pointY, foreColor)
+            return image
+
+        self.arrowUp = drawArrow(False)
+        self.arrowDown = drawArrow(True)
 
         node.init(self)
 
