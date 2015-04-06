@@ -49,9 +49,9 @@ class MenuNode:
             width = max([self.rect.width] + list(n.rect.width for n in self.nodes)) + self.menu.itemHeight*2
             # include room for border top and bottom, menu header, and header padding
             height = (len(self.nodes) + 3)*self.menu.itemHeight
-            return (width, height)
+            return width, height
         else:
-            return (0, 0)
+            return 0, 0
 
     def handle_event(self, event: EventType) -> bool:
         if event.key == K_UP:
@@ -74,6 +74,8 @@ class MenuNode:
             if event.key == node.key:
                 node.invoke()
                 return True
+
+        return False
 
     def invoke(self):
         if len(self.nodes) > 0:
@@ -186,6 +188,9 @@ class KeyBindMenuNode(MenuNode):
 
 
 class Menu:
+    KEY_REPEAT_START = 0.35
+    KEY_REPEAT_INTERVAL = 0.05
+
     def __init__(self, node: MenuNode, font: Font, foreColor: Color, selectColor: Color,
                  backgroundColor: Color=None, borderColor: Color=None, fadeColor: Color=None):
         self.current = node
@@ -204,6 +209,11 @@ class Menu:
         self._midtop = None
         """:type: (int, int)"""
         self.imageInited = False
+
+        self.repeatEvent = None
+        """:type: EventType"""
+        self.repeatTimeout = None
+        """:type: float"""
 
         node.init(self)
 
@@ -241,10 +251,22 @@ class Menu:
         self.current.selected = 0
 
     def handle_event(self, event: EventType) -> bool:
-        if event.type != KEYDOWN:
-            return False
+        if event.type == KEYDOWN:
+            self.repeatEvent = event
+            self.repeatTimeout = self.KEY_REPEAT_START
+            return self.current.handle_event(event)
+        elif event.type == KEYUP:
+            self.repeatEvent = None
+            self.repeatTimeout = None
 
-        self.current.handle_event(event)
+        return False
+
+    def update(self, delta: float):
+        if self.repeatTimeout is not None:
+            self.repeatTimeout -= delta
+            if self.repeatTimeout <= 0:
+                self.repeatTimeout = self.KEY_REPEAT_INTERVAL
+                self.current.handle_event(self.repeatEvent)
 
     def draw(self, screen: Surface):
         if not self.imageInited:

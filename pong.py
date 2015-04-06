@@ -85,7 +85,6 @@ class Game:
         self.scoreBoard.score(player)
 
         if self.scoreBoard.winner is None:
-            # set timer to remove score message and reset ball
             self.timers.append(Timer(3, lambda: self._serveBall(player)))
 
     def handle_event(self, event: EventType) -> bool:
@@ -279,8 +278,10 @@ def main():
         game.draw()
 
         if game.state == GameState.mainMenu:
+            mainMenu.update(delta)
             mainMenu.draw(screen)
         elif game.state == GameState.pauseMenu:
+            pauseMenu.update(delta)
             pauseMenu.draw(screen)
 
         pygame.display.flip()
