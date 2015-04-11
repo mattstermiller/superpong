@@ -136,8 +136,8 @@ class MenuNode:
 
 
 class CheckMenuNode(MenuNode):
-    def __init__(self, text: str, key: int=None):
-        MenuNode.__init__(self, text, None, key)
+    def __init__(self, text: str, callback=None, key: int=None):
+        MenuNode.__init__(self, text, callback, key)
         self.checked = False
         self.checkRect = None
 
@@ -157,7 +157,9 @@ class CheckMenuNode(MenuNode):
         self.checkRect = box.inflate([-self.menu.fontPadding]*2)
 
     def invoke(self):
-        self.checked = not self.checked
+        if not self.disabled:
+            self.checked = not self.checked
+        MenuNode.invoke(self)
 
     def draw(self, screen: Surface, pos: (int, int)):
         MenuNode.draw(self, screen, pos)
@@ -166,14 +168,15 @@ class CheckMenuNode(MenuNode):
 
 
 class RadioMenuNode(CheckMenuNode):
-    def __init__(self, text: str, key: int=None):
-        CheckMenuNode.__init__(self, text, key)
+    def __init__(self, text: str, callback=None, key: int=None):
+        CheckMenuNode.__init__(self, text, callback, key)
 
     def invoke(self):
         CheckMenuNode.invoke(self)
-        for node in self.parent.nodes:
-            if node is not self:
-                node.checked = False
+        if not self.disabled:
+            for node in self.parent.nodes:
+                if node is not self:
+                    node.checked = False
 
 
 class KeyBindMenuNode(MenuNode):

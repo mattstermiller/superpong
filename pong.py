@@ -74,6 +74,8 @@ class Game:
         flags = DOUBLEBUF | HWSURFACE
         if self.config['fullscreen']:
             flags |= FULLSCREEN
+        else:
+            flags |= RESIZABLE
         self.screen = pygame.display.set_mode(self.config['resolution'], flags)
 
         gameArea = Vector2(1.5, 1)
@@ -103,6 +105,11 @@ class Game:
             self.timers.append(Timer(3, lambda: self._serveBall(player)))
 
     def handle_event(self, event: EventType) -> bool:
+        if event.type == VIDEORESIZE:
+            self.config['resolution'] = event.size
+            self.config.save()
+            return True
+
         if self.state == GameState.inGame:
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 self.state = GameState.pauseMenu
@@ -196,8 +203,52 @@ def getOptions(conf: Config) -> MenuNode:
     options = MenuNode("Options", key=K_o)
 
     video = MenuNode("Video", key=K_v)
-    video.add(CheckMenuNode("Full Screen", key=K_f))
-    video.add(MenuNode("Resolution", key=K_r))
+
+    fullscreenToSet = conf['fullscreen']
+    resolutionToSet = conf['resolution']
+
+    def setFull():
+        nonlocal fullscreenToSet
+        fullscreenToSet = fullscreen.checked
+        resolution.disabled = not fullscreen.checked
+        apply.disabled = False
+
+    fullscreen = CheckMenuNode("Full Screen", setFull, K_f)
+    fullscreen.checked = conf['fullscreen']
+
+    video.add(fullscreen)
+
+    resolution = MenuNode("Resolution", key=K_r)
+    resolution.disabled = not fullscreen.checked
+
+    def setRes(res):
+        nonlocal resolutionToSet
+        resolutionToSet = res
+        apply.disabled = False
+
+    for res in pygame.display.list_modes():
+        node = RadioMenuNode("{}x{}".format(*res), lambda r=res: setRes(r))
+        if fullscreen.checked:
+            if res == conf['resolution']:
+                node.checked = True
+        else:
+            if len(resolution.nodes) == 0:
+                node.checked = True
+        resolution.add(node)
+
+    video.add(resolution)
+
+    def applyChanges():
+        conf['fullscreen'] = fullscreenToSet
+        conf['resolution'] = resolutionToSet
+        conf.save()
+        apply.disabled = True
+
+    apply = MenuNode('Apply Changes', applyChanges, K_a)
+    apply.disabled = True
+
+    video.add(apply)
+
     options.add(video)
 
     options.add(MenuNode("Audio", key=K_a))
@@ -264,7 +315,7 @@ def getPauseMenu(game: Game, conf: Config) -> Menu:
 def main():
     conf = Config('settings.config')
     # default settings
-    conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN, 'resolution': (1110, 740)}
+    conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN, 'resolution': (800, 600)}
     conf.load()
 
     # display
