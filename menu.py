@@ -26,17 +26,24 @@ class MenuNode:
         """:type: MenuNode"""
         self.image = None
         """:type: Surface"""
+        self.imageDisabled = None
+        """:type: Surface"""
         self.rect = None
         """:type: Rect"""
 
         self.nodes = []
         self.selected = 0
+        self.disabled = False
         self.visibleIndex = 0
 
     def init(self, menu: Menu):
         self.menu = menu
         self.image = menu.font.render(self.text, True, menu.foreColor)
         self.rect = self.image.get_rect()
+
+        self.imageDisabled = self.image.copy()
+        self.imageDisabled.fill((255, 255, 255, 90), None, BLEND_RGBA_MULT)
+
         for node in self.nodes:
             node.init(menu)
 
@@ -86,14 +93,18 @@ class MenuNode:
         return False
 
     def invoke(self):
-        if len(self.nodes) > 0:
-            self.selected = 0
-            self.menu.current = self
-        elif self.callback:
-            self.callback()
+        if not self.disabled:
+            if len(self.nodes) > 0:
+                self.selected = 0
+                self.menu.current = self
+            elif self.callback:
+                self.callback()
 
     def draw(self, screen: Surface, pos: (int, int)):
-        screen.blit(self.image, pos)
+        if self.disabled:
+            screen.blit(self.imageDisabled, pos)
+        else:
+            screen.blit(self.image, pos)
 
     def drawMenu(self, screen: Surface):
         pos = list(self.menu.topleft)
