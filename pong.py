@@ -52,6 +52,9 @@ class Game:
 
         self.state = GameState.mainMenu
 
+        self.mainMenu = getMainMenu(self, config)
+        self.pauseMenu = getPauseMenu(self, config)
+
         table = Table()
 
         self.scoreBoard = ScoreBoard()
@@ -100,31 +103,50 @@ class Game:
             self.timers.append(Timer(3, lambda: self._serveBall(player)))
 
     def handle_event(self, event: EventType) -> bool:
-        if event.type == KEYDOWN and event.key == K_ESCAPE:
-            self.state = GameState.pauseMenu
-            return True
-
-        for player in self.players:
-            if player.handle_event(event):
+        if self.state == GameState.inGame:
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                self.state = GameState.pauseMenu
                 return True
+
+            for player in self.players:
+                if player.handle_event(event):
+                    return True
+
+        elif self.state == GameState.mainMenu:
+            return self.mainMenu.handle_event(event)
+        elif self.state == GameState.pauseMenu:
+            return self.pauseMenu.handle_event(event)
 
         return False
 
     def update(self, delta: float):
-        for timer in self.timers:
-            timer.tick(delta)
-            if timer.isElapsed:
-                self.timers.remove(timer)
+        if self.state == GameState.inGame:
+            for timer in self.timers:
+                timer.tick(delta)
+                if timer.isElapsed:
+                    self.timers.remove(timer)
 
-        for bot in self.bots:
-            bot.update(delta)
+            for bot in self.bots:
+                bot.update(delta)
 
-        self.sprites.update(delta)
+            self.sprites.update(delta)
+        elif self.state == GameState.mainMenu:
+            self.mainMenu.update(delta)
+        elif self.state == GameState.pauseMenu:
+            self.pauseMenu.update(delta)
 
     def draw(self):
-        self.screen.blit(self.image, (0, 0))
+        if self.state == GameState.quit:
+            self.screen.fill(THECOLORS['black'])
+        else:
+            self.screen.blit(self.image, (0, 0))
 
-        self.sprites.draw(self.screen)
+            self.sprites.draw(self.screen)
+
+            if self.state == GameState.mainMenu:
+                self.mainMenu.draw(self.screen)
+            elif self.state == GameState.pauseMenu:
+                self.pauseMenu.draw(self.screen)
 
     def _serveBall(self, scoringPlayer: int=None):
         self.scoreBoard.hideMessages()
@@ -248,15 +270,11 @@ def main():
     # display
     pygame.init()
     game = Game(conf)
-    screen = game.screen
 
     pygame.display.set_caption('Super Pong 2015')
     pygame.mouse.set_visible(False)
 
     clock = pygame.time.Clock()
-
-    mainMenu = getMainMenu(game, conf)
-    pauseMenu = getPauseMenu(game, conf)
 
     # game loop
     while game.state != GameState.quit:
@@ -267,29 +285,10 @@ def main():
                 game.state = GameState.quit
                 break
 
-            if game.state == GameState.mainMenu:
-                mainMenu.handle_event(event)
-            elif game.state == GameState.pauseMenu:
-                pauseMenu.handle_event(event)
-            elif game.state == GameState.inGame:
-                game.handle_event(event)
+            game.handle_event(event)
 
-        if game.state == GameState.quit:
-            screen.fill(THECOLORS['black'])
-            pygame.display.flip()
-            break
-
-        if game.state == GameState.inGame:
-            game.update(delta)
-
+        game.update(delta)
         game.draw()
-
-        if game.state == GameState.mainMenu:
-            mainMenu.update(delta)
-            mainMenu.draw(screen)
-        elif game.state == GameState.pauseMenu:
-            pauseMenu.update(delta)
-            pauseMenu.draw(screen)
 
         pygame.display.flip()
 
