@@ -68,13 +68,29 @@ class MenuNode:
             if self.selected > 0:
                 self.selected -= 1
                 if self.selected < self.visibleIndex:
-                    self.visibleIndex -= 1
+                    self.visibleIndex = self.selected
+            return True
+        elif event.key == K_PAGEUP:
+            self.selected = max(self.selected - self.menu.visibleItems, 0)
+            self.visibleIndex = max(self.visibleIndex - self.menu.visibleItems, 0)
+            return True
+        elif event.key == K_HOME:
+            self.selected = 0
+            self.visibleIndex = self.selected
             return True
         elif event.key == K_DOWN:
             if self.selected < len(self.nodes) - 1:
                 self.selected += 1
             if self.selected >= self.visibleIndex + self.menu.visibleItems:
                 self.visibleIndex += 1
+            return True
+        elif event.key == K_PAGEDOWN:
+            self.selected = min(self.selected + self.menu.visibleItems, len(self.nodes) - 1)
+            self.visibleIndex = min(self.visibleIndex + self.menu.visibleItems, len(self.nodes) - self.menu.visibleItems)
+            return True
+        elif event.key == K_END:
+            self.selected = len(self.nodes) - 1
+            self.visibleIndex = min(self.selected, len(self.nodes) - self.menu.visibleItems)
             return True
         elif event.key == K_RETURN:
             self.nodes[self.selected].invoke()
@@ -172,11 +188,12 @@ class RadioMenuNode(CheckMenuNode):
         CheckMenuNode.__init__(self, text, callback, key)
 
     def invoke(self):
-        CheckMenuNode.invoke(self)
         if not self.disabled:
+            self.checked = True
             for node in self.parent.nodes:
                 if node is not self:
                     node.checked = False
+        MenuNode.invoke(self)
 
 
 class KeyBindMenuNode(MenuNode):
