@@ -48,27 +48,29 @@ class Game:
     def __init__(self, config: Config):
         self.config = config
         self.screen = None
-        self.initVideo()
+        """:type: Surface"""
+        self.image = None
+        """:type: Surface"""
 
         self.state = GameState.mainMenu
 
-        self.mainMenu = getMainMenu(self, config)
-        self.pauseMenu = getPauseMenu(self, config)
-
-        table = Table()
-
+        self.table = Table()
         self.scoreBoard = ScoreBoard()
-        self.paddles = [Paddle(table, -1), Paddle(table, 1)]
-        self.ball = Ball(table, self.paddles, self)
+        self.paddles = [Paddle(self.table, -1), Paddle(self.table, 1)]
+        self.ball = Ball(self.table, self.paddles, self)
         self.sprites = pygame.sprite.RenderPlain(self.scoreBoard, self.ball, self.paddles[0], self.paddles[1])
 
         self.players = []
         self.bots = []
         self.timers = []
 
-        self.image = pygame.Surface(self.screen.get_size()).convert()
-        self.image.fill(THECOLORS['black'])
-        self.image.blit(table.image, table.rect)
+        self.mainMenu = None
+        self.pauseMenu = None
+
+        self.initVideo()
+
+        self.mainMenu = getMainMenu(self, config)
+        self.pauseMenu = getPauseMenu(self, config)
 
     def initVideo(self):
         flags = DOUBLEBUF | HWSURFACE
@@ -78,9 +80,24 @@ class Game:
             flags |= RESIZABLE
         self.screen = pygame.display.set_mode(self.config['resolution'], flags)
 
+        size = self.screen.get_size()
+        for menu in [self.mainMenu, self.pauseMenu]:
+            if menu:
+                menu.midtop = (int(size[0] / 2), int(size[0] / 8))
+                menu.initImage(size)
+
         gameArea = Vector2(1.5, 1)
         screenArea = Rect(0, 0, 3, 2).fit(self.screen.get_rect())
         PongSprite.viewport = Viewport(screenArea, gameArea)
+
+        self.image = pygame.Surface(size).convert()
+        self.image.fill(THECOLORS['black'])
+
+        self.table.initImage()
+        self.image.blit(self.table.image, self.table.rect)
+
+        for s in self.sprites:
+            s.initImage()
 
     def start(self, players: int):
         self.state = GameState.inGame
@@ -107,6 +124,7 @@ class Game:
     def handle_event(self, event: EventType) -> bool:
         if event.type == VIDEORESIZE:
             self.config['resolution'] = event.size
+            self.initVideo()
             self.config.save()
             return True
 
@@ -194,12 +212,12 @@ def createMenu(rootNode: MenuNode, screenSize: (int, int)) -> Menu:
     fadeColor = (128, 128, 128, 32)
 
     menu = Menu(rootNode, pygame.font.Font(None, 36), foreColor, selectColor, backgroundColor, borderColor, fadeColor)
-    menu.midtop = (int(screenSize[0] / 2), int(screenSize[0] / 8))
+    menu.midtop = (int(screenSize[0] / 2), int(screenSize[1] / 8))
 
     return menu
 
 
-def getOptions(conf: Config) -> MenuNode:
+def getOptions(game: Game, conf: Config) -> MenuNode:
     options = MenuNode("Options", key=K_o)
 
     video = MenuNode("Video", key=K_v)
@@ -209,6 +227,7 @@ def getOptions(conf: Config) -> MenuNode:
 
     def setFull():
         nonlocal fullscreenToSet
+        nonlocal resolutionToSet
         fullscreenToSet = fullscreen.checked
         resolution.disabled = not fullscreen.checked
         apply.disabled = False
@@ -221,9 +240,9 @@ def getOptions(conf: Config) -> MenuNode:
     resolution = MenuNode("Resolution", key=K_r)
     resolution.disabled = not fullscreen.checked
 
-    def setRes(res):
+    def setRes(r):
         nonlocal resolutionToSet
-        resolutionToSet = res
+        resolutionToSet = r
         apply.disabled = False
 
     for res in pygame.display.list_modes():
@@ -239,8 +258,14 @@ def getOptions(conf: Config) -> MenuNode:
     video.add(resolution)
 
     def applyChanges():
+        nonlocal fullscreenToSet
+        nonlocal resolutionToSet
+        # if switching to fullscreen without setting a resolution, automatically use best mode
+        if fullscreenToSet and not conf['fullscreen'] and resolutionToSet == conf['resolution']:
+            resolutionToSet = pygame.display.list_modes()[0]
         conf['fullscreen'] = fullscreenToSet
         conf['resolution'] = resolutionToSet
+        game.initVideo()
         conf.save()
         apply.disabled = True
 
@@ -278,14 +303,14 @@ def getMainMenu(game: Game, conf: Config) -> Menu:
 
     root.add(newGame)
 
-    root.add(getOptions(conf))
+    root.add(getOptions(game, conf))
 
     def exitGame():
         game.state = GameState.quit
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
-    return createMenu(root, game.screen.get_size())
+    return createMenu(root, conf['resolution'])
 
 
 def getPauseMenu(game: Game, conf: Config) -> Menu:
@@ -296,7 +321,7 @@ def getPauseMenu(game: Game, conf: Config) -> Menu:
 
     root.add(MenuNode("Resume", resume, K_r))
 
-    root.add(getOptions(conf))
+    root.add(getOptions(game, conf))
 
     def endGame():
         game.state = GameState.mainMenu
@@ -309,7 +334,7 @@ def getPauseMenu(game: Game, conf: Config) -> Menu:
 
     root.add(MenuNode("Exit", exitGame, K_x))
 
-    return createMenu(root, game.screen.get_size())
+    return createMenu(root, conf['resolution'])
 
 
 def main():

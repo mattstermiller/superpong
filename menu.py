@@ -254,9 +254,10 @@ class Menu:
         self.fadeColor = fadeColor
         self.visibleItems = visibleItems
 
-        self._topleft = (0, 0)
-        self._midtop = None
-        """:type: (int, int)"""
+        self.image = None
+        """:type: Surface"""
+        self._rect = Rect(0, 0, 0, 0)
+        self._usingMidtop = False
         self.imageInited = False
 
         self.repeatEvent = None
@@ -295,25 +296,52 @@ class Menu:
 
     @property
     def topleft(self) -> (int, int):
-        return self._topleft
+        return self._rect.topleft
 
     @topleft.setter
     def topleft(self, value):
-        self._topleft = value
-        if self.imageInited:
-            self._midtop = (value[0] + int(self.image.get_size()[0]/2), value[1])
-        else:
-            self._midtop = None
+        self._rect.topleft = value
+        self._usingMidtop = False
 
     @property
     def midtop(self) -> (int, int):
-        return self._midtop
+        return self._rect.midtop
 
     @midtop.setter
     def midtop(self, value):
-        self._midtop = value
-        if self.imageInited:
-            self._topleft = (value[0] - int(self.image.get_size()[0]/2), value[1])
+        self._rect.midtop = value
+        self._usingMidtop = True
+
+    def initImage(self, screenSize: (int, int)):
+        self.imageInited = True
+
+        if self.backgroundColor:
+            # search for largest dimensions in tree
+            def maxSize(n: MenuNode) -> (int, int):
+                sizes = [n.getSize()] + list(maxSize(c) for c in n.nodes)
+                return tuple(max(s[d] for s in sizes) for d in range(2))
+
+            size = maxSize(self.root)
+
+            import drawutil
+            self.image = drawutil.rect(size, self.backgroundColor, self.fontPadding, self.borderColor)
+            if self._usingMidtop:
+                oldMidtop = self._rect.midtop
+            self._rect.size = self.image.get_size()
+            if self._usingMidtop:
+                self._rect.midtop = oldMidtop
+
+        if self.fadeColor:
+            fade = Surface(screenSize)
+
+            if len(self.fadeColor) > 3:
+                fade = fade.convert_alpha()
+            else:
+                fade = fade.convert()
+
+            fade.fill(self.fadeColor)
+            fade.blit(self.image, self._rect.topleft)
+            self.image = fade
 
     def reset(self):
         self.current = self.root
@@ -339,39 +367,9 @@ class Menu:
 
     def draw(self, screen: Surface):
         if not self.imageInited:
-            self._initImage(screen)
+            self.initImage(screen.get_size())
 
         if self.image:
-            drawPos = (0, 0) if self.fadeColor else self.topleft
+            drawPos = (0, 0) if self.fadeColor else self._rect.topleft
             screen.blit(self.image, drawPos)
         self.current.drawMenu(screen)
-
-    def _initImage(self, screen: Surface):
-        self.imageInited = True
-
-        if self.backgroundColor:
-            # search for largest dimensions in tree
-            def maxSize(n: MenuNode) -> (int, int):
-                sizes = [n.getSize()] + list(maxSize(c) for c in n.nodes)
-                return tuple(max(s[d] for s in sizes) for d in range(2))
-
-            size = maxSize(self.root)
-
-            import drawutil
-            self.image = drawutil.rect(size, self.backgroundColor, self.fontPadding, self.borderColor)
-            # if midtop was set, re-set it to calculate topleft
-            if self.midtop:
-                self.midtop = self.midtop
-
-        if self.fadeColor:
-            fade = Surface(screen.get_size())
-
-            if len(self.fadeColor) > 3:
-                fade = fade.convert_alpha()
-            else:
-                fade = fade.convert()
-
-            fade.fill(self.fadeColor)
-
-            fade.blit(self.image, self.topleft)
-            self.image = fade

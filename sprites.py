@@ -20,11 +20,17 @@ class PongSprite(Sprite):
         self.pos = Vector2()
         self.vel = Vector2()
 
+        self.image = None
+        """:type: Surface"""
+
     @property
     def halfSize(self):
         if self._halfSize is None:
             self._halfSize = tuple(d/2 for d in self.size)
         return self._halfSize
+
+    def initImage(self):
+        pass
 
     def collide(self, other):
         return collision.rect_rect(self.pos, self.halfSize, other.pos, other.halfSize)
@@ -34,16 +40,19 @@ class Table:
     WALL_SIZE = 0.045
 
     def __init__(self):
-        viewport = PongSprite.viewport
-
-        wallColor = THECOLORS['white']
-        centerLineColor = THECOLORS['red']
-
         self.pos = Vector2()
         self.size = Vector2(1.5, 1)
         self.innerSize = self.size.elementwise() - self.WALL_SIZE*2
 
         self.rect = Rect(0, 0, 0, 0)
+        self.image = None
+
+    def initImage(self):
+        viewport = PongSprite.viewport
+
+        wallColor = THECOLORS['white']
+        centerLineColor = THECOLORS['red']
+
         viewport.updateRect(self)
 
         pixelWallSize = viewport.translateSize((self.WALL_SIZE, self.WALL_SIZE))
@@ -75,6 +84,12 @@ class ScoreBoard(PongSprite):
         self.size = Vector2(1, Table.WALL_SIZE)
         self.pos = Vector2(0, 0.5-(Table.WALL_SIZE/2))
 
+        self.font = None
+        self.scoreMessages = []
+        self.winnerMessages = []
+        self.prepareMessage = None
+
+    def initImage(self):
         self.viewport.updateRect(self)
 
         heightPx = self.viewport.translateSize(self.size)[1]
@@ -162,6 +177,7 @@ class Paddle(PongSprite):
         self.direction = 0
         self.reset()
 
+    def initImage(self):
         paddleColor = self.COLORS[0 if self.side < 0 else 1]
 
         self.viewport.updateRect(self)
@@ -221,6 +237,7 @@ class Ball(PongSprite):
         self.vel = Vector2()
         self.speedupHits = 0
 
+    def initImage(self):
         self.viewport.updateRect(self)
 
         self.image = Surface(self.rect.size).convert_alpha()
