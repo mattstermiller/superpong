@@ -83,7 +83,7 @@ class Game:
         size = self.screen.get_size()
         for menu in [self.mainMenu, self.pauseMenu]:
             if menu:
-                menu.midtop = (int(size[0] / 2), int(size[0] / 8))
+                menu.midtop = (int(size[0] / 2), int(size[1] / 8))
                 menu.initImage(size)
 
         gameArea = Vector2(1.5, 1)

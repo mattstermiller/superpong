@@ -256,6 +256,8 @@ class Menu:
 
         self.image = None
         """:type: Surface"""
+        self.imageFade = None
+        """:type: Surface"""
         self._rect = Rect(0, 0, 0, 0)
         self._usingMidtop = False
         self.imageInited = False
@@ -332,16 +334,14 @@ class Menu:
                 self._rect.midtop = oldMidtop
 
         if self.fadeColor:
-            fade = Surface(screenSize)
+            self.imageFade = Surface(screenSize)
 
             if len(self.fadeColor) > 3:
-                fade = fade.convert_alpha()
+                self.imageFade = self.imageFade.convert_alpha()
             else:
-                fade = fade.convert()
+                self.imageFade = self.imageFade.convert()
 
-            fade.fill(self.fadeColor)
-            fade.blit(self.image, self._rect.topleft)
-            self.image = fade
+            self.imageFade.fill(self.fadeColor)
 
     def reset(self):
         self.current = self.root
@@ -369,7 +369,8 @@ class Menu:
         if not self.imageInited:
             self.initImage(screen.get_size())
 
+        if self.imageFade:
+            screen.blit(self.imageFade, (0, 0))
         if self.image:
-            drawPos = (0, 0) if self.fadeColor else self._rect.topleft
-            screen.blit(self.image, drawPos)
+            screen.blit(self.image, self._rect.topleft)
         self.current.drawMenu(screen)
