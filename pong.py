@@ -3,40 +3,6 @@ from sprites import *
 from controllers import PlayerController, BotController
 
 
-class Viewport:
-    def __init__(self, screenArea: Rect, cameraSize: (float, float), cameraCenter: (float, float)=(0, 0),
-                 invertYAxis: bool=True):
-        screenSize = Vector2(screenArea.size)
-        screenPos = Vector2(screenArea.topleft)
-        cameraSize = Vector2(cameraSize)
-        cameraCenter = Vector2(cameraCenter)
-
-        self.sizeFactor = screenSize.elementwise()/cameraSize
-        self.posFactor = Vector2(self.sizeFactor)
-        self.posTranslate = cameraSize/2 - cameraCenter
-        screenTranslate = (screenPos.elementwise()*cameraSize).elementwise()/screenSize
-        if invertYAxis:
-            self.posFactor.y *= -1
-            screenTranslate.y *= -1
-            self.posTranslate.y -= cameraSize.y
-        self.posTranslate = self.posTranslate + screenTranslate
-
-    def translateSize(self, size: (float, float)) -> Vector2:
-        pixelSize = Vector2(size).elementwise()*self.sizeFactor
-        return Vector2(tuple(round(z) for z in pixelSize))
-
-    def translatePos(self, pos: (float, float)) -> Vector2:
-        pixelPos = (Vector2(pos) + self.posTranslate).elementwise() * self.posFactor
-        return Vector2(tuple(round(z) for z in pixelPos))
-
-    def updateRect(self, sprite: PongSprite):
-        sprite.rect.size = self.translateSize(sprite.size)
-        self.updateRectPos(sprite)
-
-    def updateRectPos(self, sprite: PongSprite):
-        sprite.rect.center = self.translatePos(sprite.pos)
-
-
 class GameState:
     mainMenu = 1
     pauseMenu = 2
@@ -86,7 +52,7 @@ class Game:
                 menu.midtop = (int(size[0] / 2), int(size[1] / 8))
                 menu.initImage(size)
 
-        gameArea = Vector2(1.5, 1)
+        gameArea = self.table.size
         screenArea = Rect(0, 0, 3, 2).fit(self.screen.get_rect())
         PongSprite.viewport = Viewport(screenArea, gameArea)
 
@@ -343,7 +309,6 @@ def main():
     conf.settings = {'p1up': K_w, 'p1down': K_s, 'p2up': K_UP, 'p2down': K_DOWN, 'resolution': (800, 600)}
     conf.load()
 
-    # display
     pygame.init()
     game = Game(conf)
 

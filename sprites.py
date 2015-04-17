@@ -9,8 +9,36 @@ from random import Random
 import collision
 
 
+class Viewport:
+    def __init__(self, screenArea: Rect, cameraSize: (float, float), cameraCenter: (float, float)=(0, 0),
+                 invertYAxis: bool=True):
+        screenSize = Vector2(screenArea.size)
+        screenPos = Vector2(screenArea.topleft)
+        cameraSize = Vector2(cameraSize)
+        cameraCenter = Vector2(cameraCenter)
+
+        self.sizeFactor = screenSize.elementwise()/cameraSize
+        self.posFactor = Vector2(self.sizeFactor)
+        self.posTranslate = cameraSize/2 - cameraCenter
+        screenTranslate = (screenPos.elementwise()*cameraSize).elementwise()/screenSize
+        if invertYAxis:
+            self.posFactor.y *= -1
+            screenTranslate.y *= -1
+            self.posTranslate.y -= cameraSize.y
+        self.posTranslate = self.posTranslate + screenTranslate
+
+    def getScreenSize(self, gameSize: (float, float)) -> Vector2:
+        pixelSize = Vector2(gameSize).elementwise()*self.sizeFactor
+        return Vector2(tuple(round(z) for z in pixelSize))
+
+    def getScreenPos(self, gamePos: (float, float)) -> Vector2:
+        pixelPos = (Vector2(gamePos) + self.posTranslate).elementwise() * self.posFactor
+        return Vector2(tuple(round(z) for z in pixelPos))
+
+
 class PongSprite(Sprite):
     viewport = None
+    """:type: Viewport"""
 
     def __init__(self):
         Sprite.__init__(self)
@@ -32,20 +60,24 @@ class PongSprite(Sprite):
     def initImage(self):
         pass
 
+    def updateRect(self):
+        self.rect.size = self.viewport.getScreenSize(self.size)
+        self.updateRectPos()
+
+    def updateRectPos(self):
+        self.rect.center = self.viewport.getScreenPos(self.pos)
+
     def collide(self, other):
         return collision.rect_rect(self.pos, self.halfSize, other.pos, other.halfSize)
 
 
-class Table:
+class Table(PongSprite):
     WALL_SIZE = 0.045
 
     def __init__(self):
-        self.pos = Vector2()
+        PongSprite.__init__(self)
         self.size = Vector2(1.5, 1)
         self.innerSize = self.size.elementwise() - self.WALL_SIZE*2
-
-        self.rect = Rect(0, 0, 0, 0)
-        self.image = None
 
     def initImage(self):
         viewport = PongSprite.viewport
@@ -53,15 +85,15 @@ class Table:
         wallColor = THECOLORS['white']
         centerLineColor = THECOLORS['red']
 
-        viewport.updateRect(self)
+        PongSprite.updateRect(self)
 
-        pixelWallSize = viewport.translateSize((self.WALL_SIZE, self.WALL_SIZE))
+        pixelWallSize = viewport.getScreenSize((self.WALL_SIZE, self.WALL_SIZE))
         self.image = Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
 
         # draw center line
         lineDivisions = 15
-        lineRect = Rect((0, 0), viewport.translateSize((0.005, 1/lineDivisions)))
+        lineRect = Rect((0, 0), viewport.getScreenSize((0.005, 1/lineDivisions)))
         lineRect.centerx = self.rect.width/2
         for i in range(1, lineDivisions, 2):
             lineRect.y = lineRect.height*i
@@ -90,9 +122,9 @@ class ScoreBoard(PongSprite):
         self.prepareMessage = None
 
     def initImage(self):
-        self.viewport.updateRect(self)
+        self.updateRect()
 
-        heightPx = self.viewport.translateSize(self.size)[1]
+        heightPx = self.viewport.getScreenSize(self.size)[1]
         self.font = pygame.font.Font(None, int(heightPx))
 
         self.image = Surface(self.rect.size).convert_alpha()
@@ -103,7 +135,7 @@ class ScoreBoard(PongSprite):
 
         def positionMsg(msg, side):
             msg.rect = msg.image.get_rect()
-            pos = self.viewport.translatePos((0.55 * side, 0.4))
+            pos = self.viewport.getScreenPos((0.55 * side, 0.4))
             if i == 0:
                 msg.rect.topleft = pos
             else:
@@ -126,7 +158,7 @@ class ScoreBoard(PongSprite):
         msg = PongSprite()
         msg.image = messageFont.render("Get Ready!", True, THECOLORS['white'])
         msg.rect = msg.image.get_rect()
-        msg.rect.center = self.viewport.translatePos((0, 0))
+        msg.rect.center = self.viewport.getScreenPos((0, 0))
         self.prepareMessage = msg
 
     def reset(self):
@@ -180,7 +212,7 @@ class Paddle(PongSprite):
     def initImage(self):
         paddleColor = self.COLORS[0 if self.side < 0 else 1]
 
-        self.viewport.updateRect(self)
+        self.updateRect()
 
         self.image = Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
@@ -207,7 +239,7 @@ class Paddle(PongSprite):
         elif self.pos.y < -maxYDist:
             self.pos.y = -maxYDist
 
-        self.viewport.updateRectPos(self)
+        self.updateRectPos()
 
     def up(self):
         self.direction = 1
@@ -238,7 +270,7 @@ class Ball(PongSprite):
         self.speedupHits = 0
 
     def initImage(self):
-        self.viewport.updateRect(self)
+        self.updateRect()
 
         self.image = Surface(self.rect.size).convert_alpha()
         self.image.fill((0, 0, 0, 0))
@@ -272,7 +304,7 @@ class Ball(PongSprite):
             if self._collision():
                 break
 
-        self.viewport.updateRectPos(self)
+        self.updateRectPos()
 
     def _collision(self) -> bool:
         # wall collision
