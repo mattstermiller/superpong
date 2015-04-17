@@ -28,12 +28,18 @@ class Viewport:
         self.posTranslate = self.posTranslate + screenTranslate
 
     def getScreenSize(self, gameSize: (float, float)) -> Vector2:
-        pixelSize = Vector2(gameSize).elementwise()*self.sizeFactor
-        return Vector2(tuple(round(z) for z in pixelSize))
+        screenSize = Vector2(gameSize).elementwise() * self.sizeFactor
+        return Vector2(tuple(round(z) for z in screenSize))
 
     def getScreenPos(self, gamePos: (float, float)) -> Vector2:
-        pixelPos = (Vector2(gamePos) + self.posTranslate).elementwise() * self.posFactor
-        return Vector2(tuple(round(z) for z in pixelPos))
+        screenPos = (Vector2(gamePos) + self.posTranslate).elementwise() * self.posFactor
+        return Vector2(tuple(round(z) for z in screenPos))
+
+    def getGameSize(self, screenSize: (int, int)) -> Vector2:
+        return Vector2(screenSize).elementwise() / self.sizeFactor
+
+    def getGamePos(self, screenPos: (int, int)) -> Vector2:
+        return (Vector2(screenPos).elementwise() / self.posFactor) - self.posTranslate
 
 
 class PongSprite(Sprite):
