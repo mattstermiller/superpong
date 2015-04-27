@@ -123,6 +123,7 @@ class ScoreBoard(PongSprite):
         self.pos = Vector2(0, 0.5-(Table.WALL_SIZE/2))
 
         self.font = None
+        self.messages = []
         self.scoreMessages = []
         self.winnerMessages = []
         self.prepareMessage = None
@@ -167,6 +168,13 @@ class ScoreBoard(PongSprite):
         msg.rect.center = self.viewport.getScreenPos((0, 0))
         self.prepareMessage = msg
 
+        oldMessages = self.messages
+        self.messages = self.scoreMessages + self.winnerMessages + [self.prepareMessage]
+        # restore visibility from old messages
+        for msg, oldMsg in zip(self.messages, oldMessages):
+            msg.add(oldMsg.groups())
+            oldMsg.kill()
+
     def reset(self):
         self.scores = [0, 0]
         self.winner = None
@@ -184,7 +192,7 @@ class ScoreBoard(PongSprite):
             self._show(self.winnerMessages[player])
 
     def hideMessages(self):
-        for msg in self.scoreMessages + self.winnerMessages + [self.prepareMessage]:
+        for msg in self.messages:
             msg.kill()
 
     def _show(self, sprite):

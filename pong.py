@@ -17,6 +17,7 @@ class Game:
         """:type: Surface"""
         self.image = None
         """:type: Surface"""
+        self.letterBoxes = []
 
         self.state = GameState.mainMenu
 
@@ -55,6 +56,19 @@ class Game:
         gameArea = self.table.size
         screenArea = Rect(0, 0, 3, 2).fit(self.screen.get_rect())
         PongSprite.viewport = Viewport(screenArea, gameArea)
+
+        if screenArea.x > 0:
+            self.letterBoxes = [
+                Rect((0, 0), (screenArea.x, size[1])),
+                Rect(screenArea.topright, (size[0] - screenArea.right, size[1]))
+            ]
+        elif screenArea.y > 0:
+            self.letterBoxes = [
+                Rect((0, 0), (size[0], screenArea.y)),
+                Rect(screenArea.bottomleft, (size[0], size[1] - screenArea.bottom))
+            ]
+        else:
+            self.letterBoxes = []
 
         self.image = pygame.Surface(size).convert()
         self.image.fill(THECOLORS['black'])
@@ -138,6 +152,9 @@ class Game:
                 self.mainMenu.draw(self.screen)
             elif self.state == GameState.pauseMenu:
                 self.pauseMenu.draw(self.screen)
+
+            for box in self.letterBoxes:
+                self.screen.fill(THECOLORS['black'], box)
 
     def _serveBall(self, scoringPlayer: int=None):
         self.scoreBoard.hideMessages()
