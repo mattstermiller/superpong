@@ -261,7 +261,9 @@ class Ball(PongSprite):
     START_SPEED = 0.85
     SPEEDUP = 0.15
     SPEEDUP_HITS = 10
-    COLLISION_CURVE_EXPONENT = 4
+    MAX_ANGLE = 86
+    COLLISION_TIMEOUT = 0.1
+    COLLISION_CURVE_EXPONENT = 5
 
     def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
@@ -275,6 +277,7 @@ class Ball(PongSprite):
         self.pos = Vector2()
         self.vel = Vector2()
         self.speedupHits = 0
+        self.collisionTimeout = 0
 
     def initImage(self):
         self.updateRect()
@@ -294,9 +297,12 @@ class Ball(PongSprite):
             direction = -1 if self.rand.random() < 0.5 else 1
         angle = 180 if direction < 0 else 0
         angle += self.rand.uniform(-80, 80)
-        self.vel = collision.vectorFromPolar((self.START_SPEED, angle))
+        self.vel.from_polar((self.START_SPEED, angle))
 
     def update(self, delta: float):
+        if self.collisionTimeout > 0:
+            self.collisionTimeout -= delta
+
         move = self.vel*delta
 
         # move in small increments so that the ball cannot pass through objects when traveling quickly
@@ -319,10 +325,12 @@ class Ball(PongSprite):
         if self.pos.y >= maxYDist:
             self.pos.y = maxYDist
             self.vel.y *= -1
+            self.collisionTimeout = 0
             return True
         elif self.pos.y <= -maxYDist:
             self.pos.y = -maxYDist
             self.vel.y *= -1
+            self.collisionTimeout = 0
             return True
 
         # score
@@ -337,22 +345,39 @@ class Ball(PongSprite):
             return True
 
         # paddle collision
-        for paddle in self.paddles:
-            projection = self.collide(paddle)
-            if projection:
-                self.pos = self.pos + projection
-                normal = collision.ellipticNormal(self.pos, paddle.pos, self.COLLISION_CURVE_EXPONENT)
-                # todo: prevent multiple collisions from changing direction of ball
-                self.vel.reflect_ip(normal)
-
-                self._hitPaddle()
-                return True
+        if self.collisionTimeout <= 0:
+            for paddle in self.paddles:
+                projection = self.collide(paddle)
+                if projection:
+                    self.pos = self.pos + projection
+                    normal = collision.ellipticNormal(self.pos, paddle.pos, self.COLLISION_CURVE_EXPONENT)
+                    self.vel.reflect_ip(normal)
+                    self._hitPaddle()
+                    return True
 
         return False
 
     def _hitPaddle(self):
+        self._preventVerticalVel()
+        self.collisionTimeout = self.COLLISION_TIMEOUT
+
         self.speedupHits += 1
         if self.speedupHits == self.SPEEDUP_HITS:
             polar = self.vel.as_polar()
-            self.vel = collision.vectorFromPolar((polar[0] + self.SPEEDUP, polar[1]))
+            self.vel.from_polar((polar[0] + self.SPEEDUP, polar[1]))
             self.speedupHits = 0
+
+    def _preventVerticalVel(self):
+        # because waiting 5 minutes for the ball to cross the table is not fun
+        def setAngle(a):
+            self.vel.from_polar((self.vel.length(), a))
+
+        angle = Vector2().angle_to(self.vel)
+        if self.MAX_ANGLE < angle <= 90:
+            setAngle(self.MAX_ANGLE)
+        elif 90 < angle < 180 - self.MAX_ANGLE:
+            setAngle(180 - self.MAX_ANGLE)
+        elif -self.MAX_ANGLE > angle > -90:
+            setAngle(-self.MAX_ANGLE)
+        elif -90 >= angle > -180 + self.MAX_ANGLE:
+            setAngle(-180 + self.MAX_ANGLE)
