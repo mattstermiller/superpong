@@ -41,7 +41,7 @@ def ellipticNormal(pos, obsPos, exponent):
     :type obsPos: Vector2
     :param exponent: Exponent for the elliptical curve model (larger values being more rectangular)
     :type exponent: float
-    :rtype: float
+    :rtype: Vector2
     """
     diff = pos-obsPos
     absDiff = Vector2(abs(diff.x), abs(diff.y))

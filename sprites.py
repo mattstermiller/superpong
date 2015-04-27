@@ -261,6 +261,7 @@ class Ball(PongSprite):
     START_SPEED = 0.85
     SPEEDUP = 0.15
     SPEEDUP_HITS = 10
+    COLLISION_CURVE_EXPONENT = 4
 
     def __init__(self, table: Table, paddles: [], game):
         PongSprite.__init__(self)
@@ -340,7 +341,7 @@ class Ball(PongSprite):
             projection = self.collide(paddle)
             if projection:
                 self.pos = self.pos + projection
-                normal = collision.ellipticNormal(self.pos, paddle.pos, 4)
+                normal = collision.ellipticNormal(self.pos, paddle.pos, self.COLLISION_CURVE_EXPONENT)
                 # todo: prevent multiple collisions from changing direction of ball
                 self.vel.reflect_ip(normal)
 
