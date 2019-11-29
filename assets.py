@@ -13,12 +13,11 @@ if not pygame.mixer:
 _imageCache = {}
 
 
-def load_image(name, color_key=None, colorize=None):
+def load_image(name, color_key=None):
     """
     Load an image file.
     :param name: Name of the image file to load (in assets.images_folder).
     :param color_key: Transparent color (use -1 to use the first pixel)
-    :param colorize: Color to copy to all pixels (alpha remains intact)
     :return: Surface instance
     :raise SystemExit: When the image cannot be loaded
     """
@@ -44,20 +43,6 @@ def load_image(name, color_key=None, colorize=None):
         _imageCache[path] = image
     else:
         image = _imageCache[path]
-
-    if colorize is not None:
-        image = image.copy()
-
-        try:
-            arr = pygame.surfarray.pixels3d(image)
-            arr[:, :, 0] = colorize[0]
-            arr[:, :, 1] = colorize[1]
-            arr[:, :, 2] = colorize[2]
-        except:
-            pxarray = pygame.PixelArray(image)
-            for y in range(pxarray.shape[1]):
-                pxarray[:, y] = list(colorize + (image.unmap_rgb(px)[3],) for px in pxarray[:, y])
-            del pxarray
 
     return image
 
