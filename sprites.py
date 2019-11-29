@@ -244,25 +244,26 @@ class Paddle(PongSprite):
         self.stop()
 
     def update(self, delta: float):
-        speed = self.SPEED*delta
-        self.pos.y += speed*self.direction
+        self.pos.y = self.pos.y + self.vel.y * delta
 
         maxYDist = self.table.innerSize.y/2 - self.size.y/2
         if self.pos.y > maxYDist:
             self.pos.y = maxYDist
+            self.vel.y = 0
         elif self.pos.y < -maxYDist:
             self.pos.y = -maxYDist
+            self.vel.y = 0
 
         self.updateRectPos()
 
     def up(self):
-        self.direction = 1
+        self.vel.y = self.SPEED
 
     def down(self):
-        self.direction = -1
+        self.vel.y = -self.SPEED
 
     def stop(self):
-        self.direction = 0
+        self.vel.y = 0
 
 
 class Ball(PongSprite):
@@ -359,7 +360,19 @@ class Ball(PongSprite):
                 if projection:
                     self.pos = self.pos + projection
                     normal = collision.ellipticNormal(self.pos, paddle.pos, self.COLLISION_CURVE_EXPONENT)
-                    self.vel.reflect_ip(normal)
+                    # self.vel.reflect_ip(normal)
+                    oldvel = Vector2(self.vel)
+
+                    # if paddle.vel.y != 0:
+                    relativeVel = self.vel - paddle.vel
+                    relativeVel.reflect_ip(normal)
+                    angle = Vector2().angle_to(relativeVel)
+                    self.vel.from_polar((self.vel.length(), angle))
+                    # else:
+                    #     self.vel.reflect_ip(normal)
+
+                    print('pos: {} normal: {} oldvel: {} vel: {}, relVel {}'.format(self.pos, normal, oldvel, self.vel, relativeVel))
+
                     self._hitPaddle()
                     return True
 
