@@ -1,3 +1,0 @@
-import pong
-
-pong.main()
