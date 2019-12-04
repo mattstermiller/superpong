@@ -1,4 +1,4 @@
-namespace SuperPong
+﻿namespace SuperPong
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics;
@@ -6,9 +6,13 @@ open Microsoft.Xna.Framework.Input;
 open MonoGame.Extended
 
 module Values =
+    let gameSize = Vector2(1.5f, 1.0f)
+    let wallSize = 0.045f
+
     module Paddle =
         let size = Size2(0.024f, 0.145f)
         let xOffset = 0.6f
+        let maxYOffset = gameSize.Y/2.f - size.Height/2.f - wallSize
         let speed = 1.1f
         let colors = [Color(32, 32, 240); Color(192, 32, 32)]
 
@@ -73,7 +77,8 @@ module Logic =
         { state with Paddles = state.Paddles |> List.mapi (fun i p -> if i = index then f p else p) }
 
     let updatePaddlePos time paddle =
-        { paddle with Pos = paddle.Pos + paddle.Vel * time }
+        let pos = paddle.Pos + paddle.Vel * time |> min Values.Paddle.maxYOffset |> max -Values.Paddle.maxYOffset
+        { paddle with Pos = pos }
 
     let handle (state: GameState) = function
         | SetPaddleDir (player, dir) ->
@@ -99,7 +104,7 @@ type PongGame() as this =
 
     override __.LoadContent() = 
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-        let viewport = Viewport.Create(this.GraphicsDevice.Viewport.Bounds, Vector2(1.5f, 1.0f), Vector2.Zero, true)
+        let viewport = Viewport.Create(this.GraphicsDevice.Viewport.Bounds, Values.gameSize, Vector2.Zero, true)
         state <- { state with Viewport = viewport }
 
     override __.Update(gameTime) =
@@ -120,14 +125,22 @@ type PongGame() as this =
 
     override __.Draw(gameTime) =
         this.GraphicsDevice.Clear Color.Black
+        let view = state.Viewport
         spriteBatch.Begin()
         let drawPaddle index =
             let x = Values.Paddle.xOffset * (if index = 0 then -1.f else 1.f)
-            let rect = state.Viewport.GetScreenRect(Vector2(x, state.Paddles.[index].Pos), Values.Paddle.size)
+            let rect = view.GetScreenRect(Vector2(x, state.Paddles.[index].Pos), Values.Paddle.size)
             let color = Values.Paddle.colors.[index]
             spriteBatch.DrawRectangle(rect, color, rect.Width)
         drawPaddle 0
         drawPaddle 1
+
+        let wallSize = Size2(Values.gameSize.X, Values.wallSize) |> view.GetScreenSize
+        let topPos = Values.gameSize / Vector2(-2.f, 2.f) |> view.GetScreenPos
+        let bottomPos = -Values.gameSize/2.f + Vector2(0.f, Values.wallSize) |> view.GetScreenPos
+        spriteBatch.DrawRectangle(topPos, wallSize, Color.White, wallSize.Height/2.f)
+        spriteBatch.DrawRectangle(bottomPos, wallSize, Color.White, wallSize.Height/2.f)
+
         spriteBatch.End()
 
 module Entry =
