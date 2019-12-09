@@ -63,9 +63,17 @@ type Paddle = {
 with
     static member Default = { Pos = 0.f; Vel = 0.f }
 
+type Ball = {
+    Pos: Vector2
+    Vel: Vector2
+}
+with
+    static member Default = { Pos = Vector2.Zero; Vel = Vector2.Zero }
+
 type GameState = {
     Viewport: Viewport
     Paddles: Paddle list
+    Ball: Ball
 }
 
 type Event =
@@ -76,7 +84,7 @@ module Logic =
     let updatePaddle index f state =
         { state with Paddles = state.Paddles |> List.mapi (fun i p -> if i = index then f p else p) }
 
-    let updatePaddlePos time paddle =
+    let updatePaddlePos time (paddle: Paddle) =
         let pos = paddle.Pos + paddle.Vel * time |> min Values.Paddle.maxYOffset |> max -Values.Paddle.maxYOffset
         { paddle with Pos = pos }
 
@@ -100,6 +108,7 @@ type PongGame() as this =
     let mutable state = {
         Viewport = Viewport.Default
         Paddles = List.init 2 (fun _ -> Paddle.Default)
+        Ball = Ball.Default
     }
 
     override __.LoadContent() = 
